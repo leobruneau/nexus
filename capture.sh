@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Copy local Claude Code changes from ~/.claude back into claude/, then list what changed.
 #
-# - Rewrites claude/settings.json from ~/.claude/settings.json, with $HOME replaced by {{HOME}}.
+# - Rewrites claude/settings.json from ~/.claude/settings.json, with this clone's path replaced by
+#   {{NEXUS}} and $HOME replaced by {{HOME}}.
+# - Copies plain *.md files from ~/.claude/agents (not the nexus symlink) into claude/agents.
 # - Copies CLAUDE.md, skills, mods and hooks/*.sh that are plain files in ~/.claude (not symlinks into this repo).
 #   Run ./install.sh afterwards to replace them with symlinks.
 # - Skips ~/.claude/skills/synced, which claude.ai manages.
@@ -13,7 +15,9 @@ repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 src="$repo/claude"
 dest="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
-jq --arg h "$HOME" 'walk(if type == "string" then gsub($h; "{{HOME}}") else . end)' \
+# Replace the repo path first, since the repo usually lives under $HOME. split/join matches literally.
+jq --arg r "$repo" --arg h "$HOME" \
+  'walk(if type == "string" then split($r) | join("{{NEXUS}}") | split($h) | join("{{HOME}}") else . end)' \
   "$dest/settings.json" > "$src/settings.json"
 echo "copied  settings.json"
 
@@ -38,5 +42,14 @@ for f in "$dest"/hooks/*.sh; do
   cp "$f" "$src/hooks/"
   echo "copied  hooks/$(basename "$f")"
 done
+
+if [[ -d "$dest/agents" ]]; then
+  for f in "$dest"/agents/*.md; do
+    [[ -f "$f" && ! -L "$f" ]] || continue
+    mkdir -p "$src/agents"
+    cp "$f" "$src/agents/"
+    echo "copied  agents/$(basename "$f")"
+  done
+fi
 
 git -C "$repo" status --short

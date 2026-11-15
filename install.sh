@@ -3,9 +3,11 @@
 #
 # - Symlinks CLAUDE.md, every folder in claude/skills and claude/mods, and every file in claude/hooks
 #   into ~/.claude, so edits made on this machine land in the repo.
+# - Links claude/agents as one folder to ~/.claude/agents/nexus, so new agent files need no reinstall.
+# - Links every file in bin/ into $NEXUS_BIN_DIR (default ~/.local/bin).
 # - Merges claude/settings.json into ~/.claude/settings.json. Keys from the repo win; keys that only
-#   exist locally stay. {{HOME}} in the template becomes $HOME.
-# - Moves anything it would replace to ~/.claude/backups/coding-agent-setup-<timestamp>/.
+#   exist locally stay. {{HOME}} in the template becomes $HOME and {{NEXUS}} becomes this clone's path.
+# - Moves anything it would replace to ~/.claude/backups/nexus-<timestamp>/ (bin files go under bin/).
 #
 # Run it from a clone that stays on disk, since the symlinks point into it.
 # Usage: ./install.sh [--dry-run]
@@ -14,7 +16,8 @@ set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 src="$repo/claude"
 dest="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-backup="$dest/backups/coding-agent-setup-$(date +%Y%m%d-%H%M%S)"
+backup="$dest/backups/nexus-$(date +%Y%m%d-%H%M%S)"
+bindir="${NEXUS_BIN_DIR:-$HOME/.local/bin}"
 dry=0
 [[ "${1:-}" == "--dry-run" ]] && dry=1
 
@@ -23,8 +26,8 @@ run() { if ((dry)); then echo "would: $*"; else "$@"; fi; }
 command -v jq >/dev/null || { echo "jq is required (brew install jq, or apt install jq)" >&2; exit 1; }
 run mkdir -p "$dest/skills" "$dest/mods"
 
-link() { # link <target in repo> <path in ~/.claude>
-  local target="$1" path="$2" rel="${2#"$dest"/}"
+link() { # link <target in repo> <path> [path relative to the backup folder]
+  local target="$1" path="$2" rel="${3:-${2#"$dest"/}}"
   if [[ -L "$path" && "$(readlink "$path")" == "$target" ]]; then
     echo "ok      $rel"
     return
@@ -44,7 +47,20 @@ for d in "$src"/mods/*/;   do d="${d%/}"; link "$d" "$dest/mods/$(basename "$d")
 run mkdir -p "$dest/hooks"
 for f in "$src"/hooks/*;   do link "$f" "$dest/hooks/$(basename "$f")"; done
 
-rendered="$(sed "s|{{HOME}}|$HOME|g" "$src/settings.json")"
+if [[ -d "$src/agents" ]]; then
+  run mkdir -p "$dest/agents"
+  link "$src/agents" "$dest/agents/nexus"
+fi
+
+if [[ -d "$repo/bin" ]]; then
+  run mkdir -p "$bindir"
+  for f in "$repo"/bin/*; do
+    [[ -e "$f" || -L "$f" ]] || continue
+    link "$f" "$bindir/$(basename "$f")" "bin/$(basename "$f")"
+  done
+fi
+
+rendered="$(sed -e "s|{{HOME}}|$HOME|g" -e "s|{{NEXUS}}|$repo|g" "$src/settings.json")"
 settings="$dest/settings.json"
 if [[ -f "$settings" ]]; then
   merged="$(jq -s '.[0] * .[1]' "$settings" <(echo "$rendered"))"
