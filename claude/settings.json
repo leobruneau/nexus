@@ -20,7 +20,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "model": "fable",
   "disableClaudeAiConnectors": true,
   "skillOverrides": {
     "handoff": "user-invocable-only",
@@ -43,7 +43,7 @@
     "web-artifacts-builder": "user-invocable-only"
   },
   "disableBundledSkills": true,
-  "disableRemoteControl": true,
+  "disableRemoteControl": false,
   "disableWorkflows": true,
   "disableArtifact": true,
   "enabledPlugins": {
@@ -66,30 +66,24 @@
     "leobruneau-skills": {
       "source": {
         "source": "github",
-        "repo": "leobruneau/coding-agent-setup"
+        "repo": "leobruneau/nexus"
       }
     }
   },
   "effortLevel": "medium",
   "modelSettings": {
     "claude-opus-5-5": {
-      "effortLevel": "medium"
+      "effortLevel": "high"
+    },
+    "claude-fable-5-2": {
+      "effortLevel": "high"
     }
   },
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "agentPushNotifEnabled": true,
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{HOME}}/.claude/hooks/load-unslop.sh"
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "hooks": [

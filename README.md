@@ -1,60 +1,106 @@
-# coding-agent-setup
+# nexus
 
-A personal Claude Code setup. The `claude/` folder mirrors `~/.claude`. It holds global instructions,
-settings, hooks, skills and a local plugin. The repo root is also a plugin marketplace with plugins anyone
-can install.
+Nexus is a home repository for a shared Claude Code setup. It holds global instructions, settings, hooks,
+skills, sub-agents and CLI tools, and `install.sh` links them into `~/.claude`. Every project repo is cloned
+inside it, under `repos/`. The root is also a plugin marketplace that anyone can install from.
+
+## Layout
+
+```
+CLAUDE.md                        map for agents, loads in every session started under nexus
+README.md, SETUP.md              SETUP.md has the steps for an agent setting up a machine
+install.sh, capture.sh
+.claude/rules/authoring.md       conventions for editing skills and agents
+claude/                          mirrors ~/.claude
+  CLAUDE.md, settings.json
+  skills/<name>/SKILL.md
+  agents/<name>.md
+  hooks/, mods/
+bin/                             CLI tools, currently ctx
+plugins/<name>/                  public marketplace plugins
+.claude-plugin/marketplace.json
+repos/                           gitignored, one clone per project
+```
 
 ## New machine
 
 ```sh
-git clone https://github.com/leobruneau/coding-agent-setup ~/coding-agent-setup
-cd ~/coding-agent-setup
+git clone https://github.com/leobruneau/nexus ~/nexus
+cd ~/nexus
 ./install.sh --dry-run   # print what would change
 ./install.sh
 ```
 
 Then restart Claude Code. You can also start Claude Code anywhere and say
-"set up this machine from github.com/leobruneau/coding-agent-setup"; `AGENTS.md` tells the agent what to do.
+"set up this machine from github.com/leobruneau/nexus"; `SETUP.md` tells the agent what to do.
 
 `install.sh` needs `jq`. It does the following:
 
-- symlinks `CLAUDE.md`, each folder in `claude/skills/` and `claude/mods/`, and each file in
-  `claude/hooks/` into `~/.claude`
+- symlinks `claude/CLAUDE.md`, each folder in `claude/skills/` and `claude/mods/`, each file in
+  `claude/hooks/`, and the `claude/agents` folder into `~/.claude`
+- links each file in `bin/` into `~/.local/bin`, or into `NEXUS_BIN_DIR` if set
 - merges `claude/settings.json` into `~/.claude/settings.json`. Repo keys win, keys that exist only on
-  the machine stay, and `{{HOME}}` becomes `$HOME`
-- moves every file it replaces to `~/.claude/backups/coding-agent-setup-<timestamp>/`
+  the machine stay, `{{HOME}}` becomes `$HOME` and `{{NEXUS}}` becomes the clone's path. The merge replaces arrays whole (for example `permissions.deny`), and a key removed from the repo stays on a machine that already has it
+- moves every file it replaces to `~/.claude/backups/nexus-<timestamp>/`
 
 Running it twice changes nothing. Because of the symlinks, the clone must stay where it is.
 
-## Saving changes
-
-Edits to `CLAUDE.md`, linked skills and mods go straight into the clone, since those are symlinks.
-Claude Code writes `settings.json` itself (for example when you enable a plugin), so copy it back:
+## Working on a project
 
 ```sh
-./capture.sh   # copies settings.json, plus any new skill or mod folder in ~/.claude
-git diff
-git commit -am "Update settings" && git push
+git clone <url> ~/nexus/repos/<name>
+cd ~/nexus/repos/<name>
+claude
 ```
 
-On other machines, `git pull && ./install.sh` applies the changes.
+To move an existing clone, `mv` it into `repos/`. If worktrees moved with it, run `git worktree repair <path>` in it with the new path of each worktree.
+Claude Code stores session history per absolute path, so sessions from the old location do not show up
+under the new one.
+
+Repos sit inside nexus because the root `CLAUDE.md` loads in every session started there. Skills, agents
+and settings reach those sessions through `~/.claude`.
 
 ## What is tracked
 
 | Path | Goes to | Contents |
 |---|---|---|
-| `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Global instructions |
+| `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Global instructions. Imports the unslop rules. |
 | `claude/settings.json` | merged into `~/.claude/settings.json` | Model, effort, permission mode, denied tools, hooks, enabled plugins, plugin marketplaces |
-| `claude/hooks/load-unslop.sh` | `~/.claude/hooks/load-unslop.sh` | SessionStart hook. Adds the unslop rules to the context at startup, after `/clear` and after `/compact`. |
 | `claude/hooks/context-alert.sh` | `~/.claude/hooks/context-alert.sh` | Runs after every tool call and prompt. When the context passes 100k, 125k and 150k tokens, it tells the agent once per threshold, with a stronger handoff request each time. |
 | `claude/skills/handoff` | `~/.claude/skills/handoff` | `/handoff` writes a handoff document and starts a fresh session with it |
 | `claude/skills/time-machine` | `~/.claude/skills/time-machine` | `/time-machine` reports past work from Claude Code and git history |
 | `claude/skills/unslop` | `~/.claude/skills/unslop` | Writing rules that strip AI patterns from prose |
+| `claude/agents` | `~/.claude/agents/nexus` | Sub-agent definitions, such as `reviewer` and `test-runner` |
 | `claude/mods/context-bar` | `~/.claude/mods/context-bar` | Local plugin that shows a context-usage bar above the prompt, loaded through `CLAUDE_CODE_PLUGIN_DIRS` |
+| `bin/ctx` | `~/.local/bin/ctx` | Prints the session's context-window usage. A symlink to the script in the `unattended-run` plugin. |
 
 Not tracked: `~/.claude.json` (account and per-project state), history, sessions, caches, and
 `~/.claude/skills/synced` (claude.ai syncs it). Plugins from marketplaces are not copied either.
 `settings.json` lists them under `enabledPlugins` and `extraKnownMarketplaces`, and Claude Code installs them.
+
+## Adding things
+
+Conventions are in `.claude/rules/authoring.md`.
+
+- Skill. Create `claude/skills/<name>/SKILL.md`, then run `./install.sh`.
+- Sub-agent. Create `claude/agents/<name>.md`. It is live with no reinstall.
+- Hook. Add the script to `claude/hooks/`, register it in `claude/settings.json`, then run `./install.sh`.
+- Plugin. Create `plugins/<name>/` and add an entry to `.claude-plugin/marketplace.json`.
+
+## Saving changes
+
+Edits to `claude/CLAUDE.md`, linked skills, agents and mods go straight into the clone, since those are
+symlinks. Claude Code writes `settings.json` itself (for example when you enable a plugin), so copy it back:
+
+```sh
+./capture.sh   # copies settings.json, plus any skill, mod, hook, agent or CLAUDE.md that is a plain file in ~/.claude
+git diff
+git add -A && git commit -m "Update settings" && git push
+```
+
+Keep the main clone on `main`, because `~/.claude` links into it and a branch checkout changes the live
+config of every session. Edit through a git worktree, then open a PR.
+On other machines, `git pull && ./install.sh` applies the changes.
 
 ## Plugin marketplace
 
@@ -65,29 +111,17 @@ Not tracked: `~/.claude.json` (account and per-project state), history, sessions
 To install without the rest of the setup:
 
 ```
-/plugin marketplace add leobruneau/coding-agent-setup
+/plugin marketplace add leobruneau/nexus
 /plugin install unattended-run@leobruneau-skills
 ```
 
-The marketplace keeps the name `leobruneau-skills` so existing installs keep working. The plugin
-manifests set no `version`, so every new commit on `main` counts as an update; run
-`/plugin marketplace update leobruneau-skills` or enable auto-update for the marketplace in `/plugin`.
+The marketplace keeps the name `leobruneau-skills` so existing installs keep working. Claude Code copies
+an installed plugin into its own cache, so an edit under `plugins/` reaches a session only after it is on
+`main` and the marketplace has updated. The plugin manifests set no `version`, so every new commit on
+`main` counts as an update. Run `/plugin marketplace update leobruneau-skills` or enable auto-update for
+the marketplace in `/plugin`.
 
 `unattended-run` has `disable-model-invocation: true`, so Claude never starts it on its own. It needs bash,
 GNU or BSD `date` and `stat`, perl on macOS (the skill ships a `setsid` stand-in), a Claude Code version
 with `claude --bg` and `claude agents --json`, and a trusted workspace. On a laptop, keep it on power
-with the lid open: `caffeinate` stops idle sleep, but closing the lid still sleeps the machine.
-
-## Layout
-
-```
-AGENTS.md                         steps for an agent asked to set up a machine
-install.sh, capture.sh
-claude/                           mirrors ~/.claude
-.claude-plugin/marketplace.json   lists the marketplace plugins
-plugins/<name>/                   one folder per marketplace plugin
-```
-
-To add a personal skill, create it in `~/.claude/skills/<name>/` and run `./capture.sh` then `./install.sh`.
-To add a marketplace plugin, create `plugins/<name>/.claude-plugin/plugin.json` and
-`plugins/<name>/skills/<name>/SKILL.md`, then add an entry to `.claude-plugin/marketplace.json`.
+with the lid open. `caffeinate` stops idle sleep, but closing the lid still sleeps the machine.
