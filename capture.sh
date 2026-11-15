@@ -3,7 +3,7 @@
 #
 # - Rewrites claude/settings.json from ~/.claude/settings.json, with this clone's path replaced by
 #   {{NEXUS}} and $HOME replaced by {{HOME}}.
-# - Copies plain *.md files from ~/.claude/agents (not the nexus symlink) into claude/agents.
+# - Moves plain *.md files from ~/.claude/agents into claude/agents when agents/nexus links there, and copies them otherwise.
 # - Copies CLAUDE.md, skills, mods and hooks/*.sh that are plain files in ~/.claude (not symlinks into this repo).
 #   Run ./install.sh afterwards to replace them with symlinks.
 # - Skips ~/.claude/skills/synced, which claude.ai manages.
@@ -47,8 +47,13 @@ if [[ -d "$dest/agents" ]]; then
   for f in "$dest"/agents/*.md; do
     [[ -f "$f" && ! -L "$f" ]] || continue
     mkdir -p "$src/agents"
-    cp "$f" "$src/agents/"
-    echo "copied  agents/$(basename "$f")"
+    if [[ -L "$dest/agents/nexus" && "$(readlink "$dest/agents/nexus")" == "$src/agents" ]]; then
+      mv "$f" "$src/agents/"
+      echo "moved   agents/$(basename "$f")"
+    else
+      cp "$f" "$src/agents/"
+      echo "copied  agents/$(basename "$f")"
+    fi
   done
 fi
 

@@ -40,7 +40,7 @@ Then restart Claude Code. You can also start Claude Code anywhere and say
   `claude/hooks/`, and the `claude/agents` folder into `~/.claude`
 - links each file in `bin/` into `~/.local/bin`, or into `NEXUS_BIN_DIR` if set
 - merges `claude/settings.json` into `~/.claude/settings.json`. Repo keys win, keys that exist only on
-  the machine stay, `{{HOME}}` becomes `$HOME` and `{{NEXUS}}` becomes the clone's path
+  the machine stay, `{{HOME}}` becomes `$HOME` and `{{NEXUS}}` becomes the clone's path. The merge replaces arrays whole (for example `permissions.deny`), and a key removed from the repo stays on a machine that already has it
 - moves every file it replaces to `~/.claude/backups/nexus-<timestamp>/`
 
 Running it twice changes nothing. Because of the symlinks, the clone must stay where it is.
@@ -53,7 +53,7 @@ cd ~/nexus/repos/<name>
 claude
 ```
 
-To move an existing clone, `mv` it into `repos/`. Run `git worktree repair` in it if it has worktrees.
+To move an existing clone, `mv` it into `repos/`. If worktrees moved with it, run `git worktree repair <path>` in it with the new path of each worktree.
 Claude Code stores session history per absolute path, so sessions from the old location do not show up
 under the new one.
 
@@ -95,11 +95,11 @@ symlinks. Claude Code writes `settings.json` itself (for example when you enable
 ```sh
 ./capture.sh   # copies settings.json, plus any skill, mod, hook, agent or CLAUDE.md that is a plain file in ~/.claude
 git diff
-git commit -am "Update settings" && git push
+git add -A && git commit -m "Update settings" && git push
 ```
 
 Keep the main clone on `main`, because `~/.claude` links into it and a branch checkout changes the live
-config of every session. Edit through a git worktree or a branch in a separate worktree, then open a PR.
+config of every session. Edit through a git worktree, then open a PR.
 On other machines, `git pull && ./install.sh` applies the changes.
 
 ## Plugin marketplace

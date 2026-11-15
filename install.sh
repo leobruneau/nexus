@@ -42,10 +42,10 @@ link() { # link <target in repo> <path> [path relative to the backup folder]
 }
 
 link "$src/CLAUDE.md" "$dest/CLAUDE.md"
-for d in "$src"/skills/*/; do d="${d%/}"; link "$d" "$dest/skills/$(basename "$d")"; done
-for d in "$src"/mods/*/;   do d="${d%/}"; link "$d" "$dest/mods/$(basename "$d")"; done
+for d in "$src"/skills/*/; do [[ -d "$d" ]] || continue; d="${d%/}"; link "$d" "$dest/skills/$(basename "$d")"; done
+for d in "$src"/mods/*/;   do [[ -d "$d" ]] || continue; d="${d%/}"; link "$d" "$dest/mods/$(basename "$d")"; done
 run mkdir -p "$dest/hooks"
-for f in "$src"/hooks/*;   do link "$f" "$dest/hooks/$(basename "$f")"; done
+for f in "$src"/hooks/*;   do [[ -e "$f" || -L "$f" ]] || continue; link "$f" "$dest/hooks/$(basename "$f")"; done
 
 if [[ -d "$src/agents" ]]; then
   run mkdir -p "$dest/agents"
@@ -76,6 +76,16 @@ if [[ -f "$settings" ]]; then
 else
   if ((dry)); then echo "would: write $settings"; else echo "$rendered" | jq . > "$settings"; fi
   echo "write   settings.json"
+fi
+
+# Claude Code ignores a marketplace whose registered source differs from the one in settings,
+# and its plugins fail to load until the marketplace is added again from the new source.
+known="$dest/plugins/known_marketplaces.json"
+if [[ -f "$known" ]]; then
+  jq -r --slurpfile k "$known" '(.extraKnownMarketplaces // {}) | to_entries[]
+    | select($k[0][.key] != null and $k[0][.key].source != .value.source)
+    | "Marketplace \(.key) changed source. Run: claude plugin marketplace add \(.value.source.repo // .value.source.path // .value.source.url)"' \
+    <<<"$rendered"
 fi
 
 if [[ -d "$backup" ]]; then echo "Replaced files are in $backup"; fi

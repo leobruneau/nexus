@@ -48,4 +48,4 @@ paths:
 
 ## Branches
 
-- The main clone stays on `main`, because `~/.claude` links into it. Edit through a worktree or a branch in a separate worktree, then open a PR.
+- The main clone stays on `main`, because `~/.claude` links into it. Edit through a git worktree, then open a PR.

@@ -8,7 +8,8 @@ If the user asks you to set up their machine from this repository, follow these 
    Don't use a temporary folder, because `install.sh` creates symlinks into the clone.
 3. Run `./install.sh --dry-run` and show the user which files it would back up and replace, and the
    settings diff. Ask before going on if it would replace a file that the repo doesn't already track.
-4. Run `./install.sh`.
+4. Run `./install.sh`. If it prints that a marketplace changed source, run the
+   `claude plugin marketplace add` command it gives. Until then that marketplace's plugins fail to load.
 5. Check that `~/.local/bin` is on `PATH`, because `install.sh` links `ctx` there. Tell the user to add it if not.
 6. Tell the user to restart Claude Code and run `/plugin` to check that the plugins in
    `claude/settings.json` under `enabledPlugins` are installed. Install any missing one with
