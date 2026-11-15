@@ -53,20 +53,13 @@
     "feature-dev@claude-plugins-official": false,
     "remember@claude-plugins-official": false,
     "mattpocock-skills@claude-plugins-official": true,
-    "egm@egm": true,
-    "unattended-run@leobruneau-skills": true
+    "egm@egm": true
   },
   "extraKnownMarketplaces": {
     "egm": {
       "source": {
         "source": "github",
         "repo": "google/elephant-goldfish-model"
-      }
-    },
-    "leobruneau-skills": {
-      "source": {
-        "source": "github",
-        "repo": "leobruneau/nexus"
       }
     }
   },

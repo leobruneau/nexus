@@ -1,7 +1,6 @@
 ---
 paths:
   - "claude/**"
-  - "plugins/**"
 ---
 
 # Authoring conventions
@@ -34,13 +33,6 @@ paths:
 ## Settings
 
 - Claude Code rewrites `~/.claude/settings.json`. Run `./capture.sh` to copy it back.
-
-## Plugins
-
-- A plugin lives in `plugins/<name>/` with `.claude-plugin/plugin.json` and `skills/<name>/SKILL.md`.
-- Add an entry to `.claude-plugin/marketplace.json`.
-- Set no `version` field, so each commit on `main` counts as an update.
-- Claude Code runs an installed plugin from its cache. An edit here is live only after it is on `main` and the marketplace has updated.
 
 ## Rules
 
