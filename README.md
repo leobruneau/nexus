@@ -2,7 +2,7 @@
 
 Nexus is a home repository for a shared Claude Code setup. It holds global instructions, settings, hooks,
 skills, sub-agents and CLI tools, and `install.sh` links them into `~/.claude`. Every project repo is cloned
-inside it, under `repos/`. The root is also a plugin marketplace that anyone can install from.
+inside it, under `repos/`.
 
 ## Layout
 
@@ -17,8 +17,6 @@ claude/                          mirrors ~/.claude
   agents/<name>.md
   hooks/, mods/
 bin/                             CLI tools, currently ctx
-plugins/<name>/                  public marketplace plugins
-.claude-plugin/marketplace.json
 repos/                           gitignored, one clone per project
 ```
 
@@ -69,10 +67,11 @@ and settings reach those sessions through `~/.claude`.
 | `claude/hooks/context-alert.sh` | `~/.claude/hooks/context-alert.sh` | Runs after every tool call and prompt. When the context passes 100k, 125k and 150k tokens, it tells the agent once per threshold, with a stronger handoff request each time. |
 | `claude/skills/handoff` | `~/.claude/skills/handoff` | `/handoff` writes a handoff document and starts a fresh session with it |
 | `claude/skills/time-machine` | `~/.claude/skills/time-machine` | `/time-machine` reports past work from Claude Code and git history |
+| `claude/skills/unattended-run` | `~/.claude/skills/unattended-run` | `/unattended-run` runs a long task (experiment search, issue backlog, refactor, sweep, literature review) unattended. Background orchestrator sessions hand off to each other through files in a run directory, a watchdog relaunches a stalled orchestrator, and a final summary session writes `FINAL_SUMMARY.md`. |
 | `claude/skills/unslop` | `~/.claude/skills/unslop` | Writing rules that strip AI patterns from prose |
 | `claude/agents` | `~/.claude/agents/nexus` | Sub-agent definitions, such as `reviewer` and `test-runner` |
 | `claude/mods/context-bar` | `~/.claude/mods/context-bar` | Local plugin that shows a context-usage bar above the prompt, loaded through `CLAUDE_CODE_PLUGIN_DIRS` |
-| `bin/ctx` | `~/.local/bin/ctx` | Prints the session's context-window usage. A symlink to the script in the `unattended-run` plugin. |
+| `bin/ctx` | `~/.local/bin/ctx` | Prints the session's context-window usage. A symlink to the script in the `unattended-run` skill. |
 
 Not tracked: `~/.claude.json` (account and per-project state), history, sessions, caches, and
 `~/.claude/skills/synced` (claude.ai syncs it). Plugins from marketplaces are not copied either.
@@ -85,7 +84,6 @@ Conventions are in `.claude/rules/authoring.md`.
 - Skill. Create `claude/skills/<name>/SKILL.md`, then run `./install.sh`.
 - Sub-agent. Create `claude/agents/<name>.md`. It is live with no reinstall.
 - Hook. Add the script to `claude/hooks/`, register it in `claude/settings.json`, then run `./install.sh`.
-- Plugin. Create `plugins/<name>/` and add an entry to `.claude-plugin/marketplace.json`.
 
 ## Saving changes
 
@@ -102,26 +100,6 @@ Keep the main clone on `main`, because `~/.claude` links into it and a branch ch
 config of every session. Edit through a git worktree, then open a PR.
 On other machines, `git pull && ./install.sh` applies the changes.
 
-## Plugin marketplace
+## Unattended runs
 
-| Plugin | Skill | What it does |
-|---|---|---|
-| `unattended-run` | `/unattended-run:unattended-run` | Runs a long task (experiment search, issue backlog, refactor, sweep, literature review) unattended. Background orchestrator sessions hand off to each other through files in a run directory, a watchdog relaunches a stalled orchestrator, and a final summary session writes `FINAL_SUMMARY.md`. |
-
-To install without the rest of the setup:
-
-```
-/plugin marketplace add leobruneau/nexus
-/plugin install unattended-run@leobruneau-skills
-```
-
-The marketplace keeps the name `leobruneau-skills` so existing installs keep working. Claude Code copies
-an installed plugin into its own cache, so an edit under `plugins/` reaches a session only after it is on
-`main` and the marketplace has updated. The plugin manifests set no `version`, so every new commit on
-`main` counts as an update. Run `/plugin marketplace update leobruneau-skills` or enable auto-update for
-the marketplace in `/plugin`.
-
-`unattended-run` has `disable-model-invocation: true`, so Claude never starts it on its own. It needs bash,
-GNU or BSD `date` and `stat`, perl on macOS (the skill ships a `setsid` stand-in), a Claude Code version
-with `claude --bg` and `claude agents --json`, and a trusted workspace. On a laptop, keep it on power
-with the lid open. `caffeinate` stops idle sleep, but closing the lid still sleeps the machine.
+The `unattended-run` skill sets `disable-model-invocation: true`, so only you start it, with `/unattended-run`. It needs bash, GNU or BSD `date` and `stat`, perl on macOS (the skill ships a `setsid` stand-in), a Claude Code version with `claude --bg` and `claude agents --json`, and a trusted workspace. On a laptop, keep it on power with the lid open. `caffeinate` stops idle sleep, but closing the lid still sleeps the machine.
