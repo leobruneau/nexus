@@ -23,7 +23,7 @@ dry=0
 
 run() { if ((dry)); then echo "would: $*"; else "$@"; fi; }
 
-command -v jq >/dev/null || { echo "jq is required (brew install jq, or apt install jq)" >&2; exit 1; }
+command -v python3 >/dev/null || { echo "python3 is required" >&2; exit 1; }
 run mkdir -p "$dest/skills" "$dest/mods"
 
 link() { # link <target in repo> <path> [path relative to the backup folder]
@@ -60,33 +60,71 @@ if [[ -d "$repo/bin" ]]; then
   done
 fi
 
-rendered="$(sed -e "s|{{HOME}}|$HOME|g" -e "s|{{NEXUS}}|$repo|g" "$src/settings.json")"
-settings="$dest/settings.json"
-if [[ -f "$settings" ]]; then
-  merged="$(jq -s '.[0] * .[1]' "$settings" <(echo "$rendered"))"
-  if [[ "$merged" == "$(jq . "$settings")" ]]; then
-    echo "ok      settings.json"
-  else
-    run mkdir -p "$backup"
-    run cp "$settings" "$backup/settings.json"
-    if ((dry)); then diff <(jq . "$settings") <(echo "$merged") || true
-    else echo "$merged" > "$settings"; fi
-    echo "merge   settings.json"
-  fi
-else
-  if ((dry)); then echo "would: write $settings"; else echo "$rendered" | jq . > "$settings"; fi
-  echo "write   settings.json"
-fi
+python3 - "$src/settings.json" "$dest" "$backup" "$repo" "$dry" <<'PY'
+import difflib, json, os, shutil, sys
+
+template, dest, backup, repo, dry = sys.argv[1:6]
+dry = dry == "1"
+
+
+def merge(a, b):
+    """Deep merge like jq's `*`: objects merge recursively, b wins, arrays are replaced."""
+    out = dict(a)
+    for k, v in b.items():
+        both_dicts = isinstance(out.get(k), dict) and isinstance(v, dict)
+        out[k] = merge(out[k], v) if both_dicts else v
+    return out
+
+
+def dump(obj):
+    return json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
+
+
+with open(template) as f:
+    text = f.read()
+text = text.replace("{{HOME}}", os.environ["HOME"]).replace("{{NEXUS}}", repo)
+rendered = json.loads(text)
+
+settings = os.path.join(dest, "settings.json")
+if os.path.isfile(settings):
+    with open(settings) as f:
+        current = json.load(f)
+    merged = merge(current, rendered)
+    if merged == current:
+        print("ok      settings.json")
+    elif dry:
+        print(f"would: cp {settings} {backup}/settings.json")
+        diff = difflib.unified_diff(
+            dump(current).splitlines(True), dump(merged).splitlines(True), "current", "merged"
+        )
+        sys.stdout.writelines(diff)
+        print("merge   settings.json")
+    else:
+        os.makedirs(backup, exist_ok=True)
+        shutil.copy2(settings, os.path.join(backup, "settings.json"))
+        with open(settings, "w") as f:
+            f.write(dump(merged))
+        print("merge   settings.json")
+else:
+    if dry:
+        print(f"would: write {settings}")
+    else:
+        with open(settings, "w") as f:
+            f.write(dump(rendered))
+    print("write   settings.json")
 
 # Claude Code ignores a marketplace whose registered source differs from the one in settings,
 # and its plugins fail to load until the marketplace is added again from the new source.
-known="$dest/plugins/known_marketplaces.json"
-if [[ -f "$known" ]]; then
-  jq -r --slurpfile k "$known" '(.extraKnownMarketplaces // {}) | to_entries[]
-    | select($k[0][.key] != null and $k[0][.key].source != .value.source)
-    | "Marketplace \(.key) changed source. Run: claude plugin marketplace add \(.value.source.repo // .value.source.path // .value.source.url)"' \
-    <<<"$rendered"
-fi
+known_path = os.path.join(dest, "plugins", "known_marketplaces.json")
+if os.path.isfile(known_path):
+    with open(known_path) as f:
+        known = json.load(f)
+    for name, entry in (rendered.get("extraKnownMarketplaces") or {}).items():
+        if name in known and known[name].get("source") != entry.get("source"):
+            s = entry.get("source") or {}
+            where = s.get("repo") or s.get("path") or s.get("url")
+            print(f"Marketplace {name} changed source. Run: claude plugin marketplace add {where}")
+PY
 
 if [[ -d "$backup" ]]; then echo "Replaced files are in $backup"; fi
 echo "Restart Claude Code. Plugins listed in enabledPlugins install from their marketplaces on start."
