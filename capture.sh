@@ -14,9 +14,11 @@ set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 src="$repo/claude"
 dest="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+jq="$dest/bin/jq"  # the pinned jq from install.sh, else the one on PATH
+[[ -x "$jq" ]] || jq="$(command -v jq)" || { echo "jq not found. Run ./install.sh first." >&2; exit 1; }
 
 # Replace the repo path first, since the repo usually lives under $HOME. split/join matches literally.
-jq --arg r "$repo" --arg h "$HOME" \
+"$jq" --arg r "$repo" --arg h "$HOME" \
   'walk(if type == "string" then split($r) | join("{{NEXUS}}") | split($h) | join("{{HOME}}") else . end)' \
   "$dest/settings.json" > "$src/settings.json"
 echo "copied  settings.json"
