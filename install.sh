@@ -23,7 +23,7 @@ dry=0
 
 run() { if ((dry)); then echo "would: $*"; else "$@"; fi; }
 
-command -v python3 >/dev/null || { echo "python3 is required" >&2; exit 1; }
+command -v python3 >/dev/null || { echo "python3 is required (xcode-select --install on macOS)" >&2; exit 1; }
 run mkdir -p "$dest/skills" "$dest/mods"
 
 link() { # link <target in repo> <path> [path relative to the backup folder]
