@@ -14,30 +14,13 @@ set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 src="$repo/claude"
 dest="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+jq="$(command -v jq || echo "$dest/bin/jq")"
+[[ -x "$jq" ]] || { echo "jq not found. Run ./install.sh first." >&2; exit 1; }
 
-python3 - "$dest/settings.json" "$src/settings.json" "$repo" "$HOME" <<'PY'
-import json, sys
-
-source, target, repo, home = sys.argv[1:5]
-
-
-def tokenize(value):
-    """Swap local paths for template tokens in every string value. The repo path goes first,
-    since the repo usually lives under $HOME."""
-    if isinstance(value, str):
-        return value.replace(repo, "{{NEXUS}}").replace(home, "{{HOME}}")
-    if isinstance(value, dict):
-        return {k: tokenize(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [tokenize(v) for v in value]
-    return value
-
-
-with open(source) as f:
-    settings = json.load(f)
-with open(target, "w") as f:
-    f.write(json.dumps(tokenize(settings), indent=2, ensure_ascii=False) + "\n")
-PY
+# Replace the repo path first, since the repo usually lives under $HOME. split/join matches literally.
+"$jq" --arg r "$repo" --arg h "$HOME" \
+  'walk(if type == "string" then split($r) | join("{{NEXUS}}") | split($h) | join("{{HOME}}") else . end)' \
+  "$dest/settings.json" > "$src/settings.json"
 echo "copied  settings.json"
 
 if [[ -f "$dest/CLAUDE.md" && ! -L "$dest/CLAUDE.md" ]]; then

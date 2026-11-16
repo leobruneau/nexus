@@ -2,8 +2,8 @@
 
 If the user asks you to set up their machine from this repository, follow these steps.
 
-1. Check for `git` and `python3`. On macOS both come with the Command Line Tools
-   (`xcode-select --install`). On Linux, install them with the package manager or ask the user to.
+1. Check for `git` and `curl`. `install.sh` uses `jq` if the machine has one and downloads it
+   otherwise, so don't install `jq` yourself.
 2. Clone `github.com/leobruneau/nexus` to `~/nexus`, or `git pull` if it is already there.
    Don't use a temporary folder, because `install.sh` creates symlinks into the clone.
 3. Run `./install.sh --dry-run` and show the user which files it would back up and replace, and the
