@@ -7,14 +7,15 @@
 # - Links every file in bin/ into $NEXUS_BIN_DIR (default ~/.local/bin).
 # - Merges claude/settings.json into ~/.claude/settings.json. Keys from the repo win; keys that only
 #   exist locally stay. {{HOME}} in the template becomes $HOME and {{NEXUS}} becomes this clone's path.
-# - Uses jq from PATH. Without one, downloads a pinned jq to ~/.claude/bin/jq and checks its SHA-256.
+# - Downloads a pinned jq to ~/.claude/bin/jq, checks its SHA-256 and uses it. Falls back to the
+#   jq on PATH if the download fails.
 # - Moves anything it would replace to ~/.claude/backups/nexus-<timestamp>/ (bin files go under bin/).
 #
 # Run it from a clone that stays on disk, since the symlinks point into it.
 # Usage: ./install.sh [--dry-run]
 set -euo pipefail
 
-# jq comes from PATH if present. Otherwise this pinned release is downloaded to ~/.claude/bin/jq.
+# The pinned jq release that install.sh downloads to ~/.claude/bin/jq.
 # Checksums come from https://github.com/jqlang/jq/releases/download/jq-1.8.2/sha256sum.txt
 JQ_VERSION=1.8.2
 JQ_SHA256_linux_amd64=b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f
@@ -36,8 +37,6 @@ esac
 
 run() { if ((dry)); then echo "would: $*"; else "$@"; fi; }
 
-fail_jq() { echo "jq is missing and could not be downloaded ($1). Install jq (brew install jq, or apt install jq) and rerun." >&2; exit 1; }
-
 jq_platform() {
   local os arch
   case "$(uname -s)" in Darwin) os=macos ;; Linux) os=linux ;; *) return 1 ;; esac
@@ -49,40 +48,48 @@ sha256_of() {
   if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }
 
+# The jq helpers below return 1 and set jq_error instead of exiting, so resolve_jq can fall back.
 download_jq() { # download_jq <platform> <expected sha256> <file>
-  command -v curl >/dev/null || fail_jq "curl is missing"
+  command -v curl >/dev/null || { jq_error="curl is missing"; return 1; }
   curl --proto '=https' --connect-timeout 15 --max-time 120 --retry 2 -fsSL -o "$3" \
-    "https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-$1" || fail_jq "download failed"
-  [[ "$(sha256_of "$3")" == "$2" ]] || fail_jq "checksum mismatch"
+    "https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-$1" || { jq_error="download failed"; return 1; }
+  [[ "$(sha256_of "$3")" == "$2" ]] || { jq_error="checksum mismatch"; return 1; }
   chmod +x "$3"
 }
 
 fetch_jq() { # fetch_jq <platform> <expected sha256>
   jq_tmp="$(mktemp -d)"
   trap 'rm -rf "$jq_tmp"' EXIT
-  download_jq "$1" "$2" "$jq_tmp/jq"
+  download_jq "$1" "$2" "$jq_tmp/jq" || return 1
   if ((dry)); then
     echo "would: fetch bin/jq (jq $JQ_VERSION)"
     JQ="$jq_tmp/jq"
   else
-    mkdir -p "$dest/bin"
-    mv "$jq_tmp/jq" "$dest/bin/jq.new"
-    mv "$dest/bin/jq.new" "$dest/bin/jq"
+    { mkdir -p "$dest/bin" && mv "$jq_tmp/jq" "$dest/bin/jq.new" && mv "$dest/bin/jq.new" "$dest/bin/jq"; } ||
+      { jq_error="cannot write $dest/bin/jq"; return 1; }
     JQ="$dest/bin/jq"
     echo "fetch   bin/jq"
   fi
 }
 
-# Sets JQ. Runs before any symlink is made, so a failure leaves nothing half installed.
-resolve_jq() {
+use_pinned_jq() {
   local platform checksum
-  if JQ="$(command -v jq)"; then echo "ok      jq (system)"; return; fi
-  command -v sha256sum >/dev/null || command -v shasum >/dev/null || fail_jq "no sha256sum or shasum"
-  platform="$(jq_platform)" || fail_jq "unsupported platform $(uname -s) $(uname -m)"
+  command -v sha256sum >/dev/null || command -v shasum >/dev/null || { jq_error="no sha256sum or shasum"; return 1; }
+  platform="$(jq_platform)" || { jq_error="unsupported platform $(uname -s) $(uname -m)"; return 1; }
   checksum="JQ_SHA256_${platform//-/_}"
   JQ="$dest/bin/jq"
   if [[ -x "$JQ" && "$(sha256_of "$JQ")" == "${!checksum}" ]]; then echo "ok      bin/jq"; return; fi
   fetch_jq "$platform" "${!checksum}"
+}
+
+# Sets JQ to the pinned jq, or to the system jq if the pinned one can't be had. Runs before any
+# symlink is made, so a failure leaves nothing half installed.
+resolve_jq() {
+  jq_error=""
+  use_pinned_jq && return
+  if JQ="$(command -v jq)"; then echo "ok      jq (system, pinned jq unavailable: $jq_error)"; return; fi
+  echo "Could not get jq ($jq_error). Install jq (brew install jq, or apt install jq) and rerun." >&2
+  exit 1
 }
 
 resolve_jq

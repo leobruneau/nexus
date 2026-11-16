@@ -2,8 +2,8 @@
 
 If the user asks you to set up their machine from this repository, follow these steps.
 
-1. Check for `git` and `curl`. `install.sh` uses `jq` if the machine has one and downloads it
-   otherwise, so don't install `jq` yourself. If `install.sh` reports that it couldn't get `jq`,
+1. Check for `git` and `curl`. `install.sh` downloads a pinned `jq`, so don't install
+   `jq` yourself. If `install.sh` reports that it couldn't get `jq`,
    install `jq` (`brew install jq` or `apt install jq`) and rerun it.
 2. Clone `github.com/leobruneau/nexus` to `~/nexus`, or `git pull` if it is already there.
    Don't use a temporary folder, because `install.sh` creates symlinks into the clone.
