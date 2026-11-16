@@ -32,7 +32,10 @@ cd ~/nexus
 Then restart Claude Code. You can also start Claude Code anywhere and say
 "set up this machine from github.com/leobruneau/nexus"; `SETUP.md` tells the agent what to do.
 
-`install.sh` needs `git` and `curl`. It uses `jq` if the machine has one. Otherwise it downloads a pinned release to `~/.claude/bin/jq` and checks its SHA-256. It does the following:
+`install.sh` uses the system `jq`. Without one, it downloads a pinned `jq` release with `curl` to
+`~/.claude/bin/jq` and checks its SHA-256.
+
+`install.sh` does the following:
 
 - symlinks `claude/CLAUDE.md`, each folder in `claude/skills/` and `claude/mods/`, each file in
   `claude/hooks/`, and the `claude/agents` folder into `~/.claude`

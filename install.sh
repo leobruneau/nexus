@@ -28,11 +28,15 @@ dest="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 backup="$dest/backups/nexus-$(date +%Y%m%d-%H%M%S)"
 bindir="${NEXUS_BIN_DIR:-$HOME/.local/bin}"
 dry=0
-[[ "${1:-}" == "--dry-run" ]] && dry=1
+case "$*" in
+  "") ;;
+  --dry-run) dry=1 ;;
+  *) echo "Usage: ./install.sh [--dry-run]" >&2; exit 1 ;;
+esac
 
 run() { if ((dry)); then echo "would: $*"; else "$@"; fi; }
 
-die_without_jq() { echo "jq is missing and could not be downloaded ($1). Install jq (brew install jq, or apt install jq) and rerun." >&2; exit 1; }
+fail_jq() { echo "jq is missing and could not be downloaded ($1). Install jq (brew install jq, or apt install jq) and rerun." >&2; exit 1; }
 
 jq_platform() {
   local os arch
@@ -46,9 +50,10 @@ sha256_of() {
 }
 
 download_jq() { # download_jq <platform> <expected sha256> <file>
-  command -v curl >/dev/null || die_without_jq "curl is missing"
-  curl -fsSL -o "$3" "https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-$1" || die_without_jq "download failed"
-  [[ "$(sha256_of "$3")" == "$2" ]] || die_without_jq "checksum mismatch"
+  command -v curl >/dev/null || fail_jq "curl is missing"
+  curl --proto '=https' --connect-timeout 15 --max-time 120 --retry 2 -fsSL -o "$3" \
+    "https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-$1" || fail_jq "download failed"
+  [[ "$(sha256_of "$3")" == "$2" ]] || fail_jq "checksum mismatch"
   chmod +x "$3"
 }
 
@@ -57,21 +62,23 @@ fetch_jq() { # fetch_jq <platform> <expected sha256>
   trap 'rm -rf "$jq_tmp"' EXIT
   download_jq "$1" "$2" "$jq_tmp/jq"
   if ((dry)); then
-    echo "would: install jq $JQ_VERSION to $dest/bin/jq"
+    echo "would: fetch bin/jq (jq $JQ_VERSION)"
     JQ="$jq_tmp/jq"
   else
     mkdir -p "$dest/bin"
-    mv "$jq_tmp/jq" "$dest/bin/jq"
+    mv "$jq_tmp/jq" "$dest/bin/jq.new"
+    mv "$dest/bin/jq.new" "$dest/bin/jq"
     JQ="$dest/bin/jq"
+    echo "fetch   bin/jq"
   fi
-  echo "fetch   bin/jq"
 }
 
 # Sets JQ. Runs before any symlink is made, so a failure leaves nothing half installed.
 resolve_jq() {
   local platform checksum
   if JQ="$(command -v jq)"; then echo "ok      jq (system)"; return; fi
-  platform="$(jq_platform)" || die_without_jq "unsupported platform $(uname -s) $(uname -m)"
+  command -v sha256sum >/dev/null || command -v shasum >/dev/null || fail_jq "no sha256sum or shasum"
+  platform="$(jq_platform)" || fail_jq "unsupported platform $(uname -s) $(uname -m)"
   checksum="JQ_SHA256_${platform//-/_}"
   JQ="$dest/bin/jq"
   if [[ -x "$JQ" && "$(sha256_of "$JQ")" == "${!checksum}" ]]; then echo "ok      bin/jq"; return; fi
