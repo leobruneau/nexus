@@ -94,8 +94,8 @@ They need bash, `claude` on the PATH, GNU or BSD `date` and `stat`, and perl on 
 | `launch_summary.sh` | starts the final summary session once, stopping the background work first if nothing has, then stops the watchdog and timers in `timer.pids` other than its caller. A second call only logs a skip |
 | `stop_work.sh` | kills each process group listed in `tools/work.pids`, runs CANCEL_CMD, logs `run stopped` |
 | `run_at.sh "<YYYY-MM-DD HH:MM>" <command>` | runs a command at a set time outside any Claude session. Refuses a past time, logs its PID |
-| `watchdog.sh` | every minute, if LOG.md has been silent for WATCHDOG_MIN minutes, launches the next orchestrator in recovery mode. When the clock jumps after the machine sleeps, it logs the wake-up, which restarts the count. Exits when the run stops |
-| `start_timers.sh` | starts `watchdog.sh` and, when STOP_AT is set, the two `run_at.sh` timers, all detached. On macOS it also starts `caffeinate` for the watchdog's lifetime. Skips a watchdog that is still alive, then prints each process in `timer.pids` as alive or not running |
+| `watchdog.sh` | every minute, if LOG.md has been silent for WATCHDOG_MIN minutes, launches the next orchestrator in recovery mode, or launches the final summary if the run stopped and LOG.md goes silent without one. When the clock jumps after the machine sleeps, it logs the wake-up, which restarts the count. Exits once the final summary has started |
+| `start_timers.sh` | starts `watchdog.sh` and, when STOP_AT or SUMMARY_AT is set, the `run_at.sh` timers, all detached. On macOS it also starts `caffeinate` for the watchdog's lifetime. Skips already-running watchdog, timers, and `caffeinate`, then prints each process in `timer.pids` as alive or not running |
 | `log.sh "<text>"` | appends `- <date time> <text>` to LOG.md with the time from `date`. Agents log through it |
 | `sessions.sh` | lists the run's `<TAG> \| ...` sessions with their state and prints a `! claude stop <id>` line for each, for the user to paste |
 | `check_tag.sh <tag> [<parent dir>]` | checks that a TAG is 2 or 3 lowercase words and not in use. Root runs it from the skill folder before the run directory exists |
@@ -119,14 +119,14 @@ The templates use `<...>` placeholders. These need a choice:
 | RUN_NAME | run.env, templates | short name of the task plus the date |
 | TAG | run.env, MISSION.md, SUMMARIZER.md | 2 or 3 words naming the task, checked with `check_tag.sh`; see "Session names" |
 | RUN_DIR, WORKSPACE | run.env, templates | absolute paths, from setup steps 3 and 5 |
-| PREFIX | run.env, MISSION.md | short lowercase tag for every job and process the run starts, e.g. `ur1101_` |
+| PREFIX | run.env, MISSION.md, SUMMARIZER.md | short lowercase tag for every job and process the run starts, e.g. `ur1101_` |
 | PERMISSION_MODE | run.env | the mode the user agrees to. A session that hits a permission prompt stalls, because nobody answers |
 | MAX_ORCH | run.env | backstop on the number of orchestrators. See setup step 4 for sizing; default 10 |
 | STOP_AT, SUMMARY_AT | run.env, MISSION.md | see "Time limits"; empty without a time component |
 | WATCHDOG_MIN | run.env | default 45. Longer than the 20-minute logging interval plus the slowest single step |
 | CANCEL_CMD | run.env | a command that cancels the run's jobs in a scheduler or CI by PREFIX; empty if the run starts none |
-| CTX_TOOL, BUDGET | MISSION.md | the context tool found at setup; default budget 150K |
-| RETRIES, NO_PROGRESS_MIN | MISSION.md | attempts before an item counts as blocked (default 2); minutes without a finished item before the run stops (default 180, longer than the slowest item) |
+| CTX_TOOL, BUDGET | MISSION.md | the context tool found at setup, default RUN/tools/ctx; default budget 150K |
+| RETRIES, NO_PROGRESS_MIN | MISSION.md, PLAN.md (RETRIES) | attempts before an item counts as blocked (default 2); minutes without a finished item before the run stops (default 180, longer than the slowest item) |
 
 Take every date and time in the templates from `date '+%Y-%m-%d %H:%M'`. Root typed setup times by hand
 in one run and wrote them 15 minutes ahead of the clock.
@@ -298,7 +298,7 @@ Recovery:
 - If LOG.md has a `handoff orchestrator <P> -> <N>` line, where P is the predecessor your prompt names, leave
   it alone. It may show as working for a while: it is finishing its last turn and answering subagents
   that report late.
-- If your prompt says recovery, or LOG.md has no handoff line for you, your predecessor crashed or
+- If your prompt says recovery, or N > 1 and LOG.md has no handoff line for you, your predecessor crashed or
   stalled. First check whether it is still working: if LOG.md has lines from it written after your launch
   line, it is alive. Log `recovery not needed, orchestrator <P> is active` and end your turn. In one run
   the machine slept, the watchdog started a recovery orchestrator, and the predecessor woke up and went

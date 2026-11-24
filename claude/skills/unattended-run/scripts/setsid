@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 # macOS has no setsid(1). Start a new session, then exec the command.
 use POSIX qw(setsid);
-if (fork()) { exit 0 }
+my $pid = fork();
+die "fork: $!" unless defined $pid;
+if ($pid) { exit 0 }
 setsid() or die "setsid: $!";
-exec @ARGV or die "exec $ARGV[0]: $!";
+exec { $ARGV[0] } @ARGV or die "exec $ARGV[0]: $!";

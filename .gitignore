@@ -3,3 +3,6 @@
 /repos/*
 !/repos/.gitkeep
 .claude/worktrees/
+claude/mods/*/.claude-plugin/types/
+__pycache__/
+*.pyc

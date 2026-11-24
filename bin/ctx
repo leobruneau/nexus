@@ -1,1 +1,107 @@
-../claude/skills/unattended-run/scripts/ctx
+#!/usr/bin/env bash
+# Print the current session's context-window usage from its transcript.
+# Supports both Antigravity CLI and Claude Code transcripts.
+# Usage: ctx [session_id] [max_tokens]
+set -euo pipefail
+shopt -s nullglob
+
+sid="${1:-}"
+max="${2:-1000000}"
+
+if ! [[ "$max" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ctx: max_tokens must be a positive integer (got '$max')" >&2
+  exit 1
+fi
+
+find_jq() {
+  local cand
+  for cand in \
+    "${NEXUS_DATA_DIR:-$HOME/.local/share/nexus}/bin/jq" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/bin/jq"; do
+    if [[ -x "$cand" ]]; then
+      echo "$cand"
+      return 0
+    fi
+  done
+  command -v jq 2>/dev/null || return 1
+}
+
+jq="$(find_jq)" || { echo "ctx: jq not found. Run nexus install.sh first." >&2; exit 1; }
+
+agy_data="${ANTIGRAVITY_APP_DATA_DIR:-$HOME/.gemini/antigravity-cli}"
+claude_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+
+mode=""
+transcript=""
+
+if [[ -n "$sid" ]]; then
+  if ! [[ "$sid" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "ctx: invalid session id '$sid'" >&2
+    exit 1
+  fi
+  agy_path="$agy_data/brain/$sid/.system_generated/logs/transcript.jsonl"
+  if [[ -f "$agy_path" ]]; then
+    mode="antigravity"
+    transcript="$agy_path"
+  else
+    matches=("$claude_dir"/projects/*/"$sid".jsonl)
+    if (( ${#matches[@]} > 0 )) && [[ -f "${matches[0]}" ]]; then
+      mode="claude"
+      transcript="${matches[0]}"
+    fi
+  fi
+elif [[ -n "${ANTIGRAVITY_CONVERSATION_ID:-}" ]]; then
+  sid="$ANTIGRAVITY_CONVERSATION_ID"
+  if ! [[ "$sid" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "ctx: invalid ANTIGRAVITY_CONVERSATION_ID '$sid'" >&2
+    exit 1
+  fi
+  mode="antigravity"
+  transcript="$agy_data/brain/$sid/.system_generated/logs/transcript.jsonl"
+elif [[ -n "${CLAUDE_CODE_SESSION_ID:-}" ]]; then
+  sid="$CLAUDE_CODE_SESSION_ID"
+  if ! [[ "$sid" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "ctx: invalid CLAUDE_CODE_SESSION_ID '$sid'" >&2
+    exit 1
+  fi
+  mode="claude"
+  matches=("$claude_dir"/projects/*/"$sid".jsonl)
+  if (( ${#matches[@]} > 0 )); then
+    transcript="${matches[0]}"
+  fi
+else
+  echo "ctx: no session id (ANTIGRAVITY_CONVERSATION_ID and CLAUDE_CODE_SESSION_ID unset)" >&2
+  exit 1
+fi
+
+if [[ -z "$transcript" || ! -f "$transcript" ]]; then
+  echo "ctx: no transcript for session $sid" >&2
+  exit 1
+fi
+
+if [[ "$mode" == "antigravity" ]]; then
+  used="$("$jq" -Rn '
+    [inputs | fromjson?
+      | select(.type == "PLANNER_RESPONSE")
+      | ((.input_tokens // 0) + (.cache_read_tokens // 0) + (.output_tokens // 0))
+      | select(. > 0)]
+    | last // empty' "$transcript" 2>/dev/null || true)"
+else
+  used="$("$jq" -Rn '
+    [inputs | fromjson?
+      | select(.type == "assistant" and (.isSidechain | not) and .message.usage != null)
+      | .message.usage
+      | ((.input_tokens // 0) + (.cache_creation_input_tokens // 0)
+        + (.cache_read_input_tokens // 0) + (.output_tokens // 0))
+      | select(. > 0)]
+    | last // empty' "$transcript" 2>/dev/null || true)"
+fi
+
+if ! [[ "$used" =~ ^[0-9]+$ ]]; then
+  echo "ctx: no usage records yet" >&2
+  exit 1
+fi
+
+awk -v used="$used" -v max="$max" 'BEGIN {
+  printf "%.1fK / %dK tokens (%.1f%%)\n", used / 1000, max / 1000, 100 * used / max
+}'

@@ -50,7 +50,7 @@ Backstops. The run also stops when any of these holds:
 
 Checks:
 - Check the stop condition when you start, after each unit of work finishes, and at least every 20
-  minutes. Log each check as `stop-check: met|not met|unknown, <evidence>, ctx <tools/ctx output>`.
+  minutes. Log each check as `stop-check: met|not met|unknown, <evidence>, ctx <<CTX_TOOL> output>`.
 - `unknown` means the check failed (e.g. the tracker was unreachable). Log the error and retry at the next
   check. After 3 `unknown` checks in a row, mark the items that depend on it blocked.
 - An item is blocked after <RETRIES, default 2> failed attempts, or when it needs a human decision, a
@@ -107,11 +107,11 @@ messages, spending money.
 - When you start: your launch prompt gives your number N and your predecessor's session id. If it
   doesn't, take them from the last `launch orchestrator` line in LOG.md. Read MISSION.md, COORDINATOR.md,
   PLAN.md and results/WORKFLOW.md with the Read tool, one file per call, and the last 60 lines of LOG.md.
-  Don't `cat` them together: the output gets cut off. Run `RUN/tools/ctx`, then log a stop check.
+  Don't `cat` them together: the output gets cut off. Run `<CTX_TOOL>`, then log a stop check.
 - If LOG.md has a `handoff orchestrator <P> -> <N>` line, where P is the predecessor your prompt names,
   leave it alone, even if
   `claude agents --json` still shows it working: it is finishing its last turn.
-- Recovery: if your prompt says recovery, or LOG.md has no `handoff orchestrator <P> -> <N>` line:
+- Recovery: if your prompt says recovery, or N > 1 and LOG.md has no `handoff orchestrator <P> -> <N>` line:
   1. If LOG.md has lines from orchestrator <P> written after your launch line, it is alive. Log
      `recovery not needed, orchestrator <P> is active` and end your turn.
   2. Otherwise it crashed or stalled. Rebuild State from LOG.md, PLAN.md, `results/`,

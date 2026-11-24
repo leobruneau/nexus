@@ -11,7 +11,10 @@ export PATH="$PATH:$TOOLS"
 log() { echo "- $(date '+%Y-%m-%d %H:%M') $*" >> "$LOG"; }
 
 # to_epoch "YYYY-MM-DD HH:MM": seconds since the epoch, with GNU or BSD date.
-to_epoch() { date -d "$1" +%s 2>/dev/null || date -j -f '%Y-%m-%d %H:%M' "$1" +%s 2>/dev/null; }
+to_epoch() {
+  [[ -n ${1:-} ]] || return 1
+  date -d "$1" +%s 2>/dev/null || date -j -f '%Y-%m-%d %H:%M:%S' "$1:00" +%s 2>/dev/null
+}
 
 # mtime <file>: modification time in seconds, with GNU or BSD stat.
 mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1"; }

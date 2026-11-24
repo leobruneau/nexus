@@ -17,28 +17,32 @@ export const level = (tokens: number) =>
 export const register: Register = on => {
   on('session.measure', async ($, e, next) => {
     const { tokens, window, percent } = e.context
-    if (tokens !== undefined && percent !== undefined) {
-      await update($, fill, () => ({ tokens, window, percent }))
-    }
+    const nextFill: Fill | null =
+      tokens !== undefined && percent !== undefined ? { tokens, window, percent } : null
+    await update($, fill, () => nextFill)
 
     return next(e)
   })
 
-  // ponytail: no slot under the prompt takes a tree except the footer's mode labels, so the count rides there
+  // SessionMode is the footer slot where the count sits next to active mode labels.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     const f: Fill | null = await read($, fill)
     if (f === null) return next(e)
 
-    const { Text } = $.ui.resolve(e)
+    const beneath = await next(e)
+    const { Box, Text } = $.ui.resolve(e)
 
     return (
-      <Text>
-        {e.props.modes.length > 0 && <Text dimColor>{e.props.modes.join(' & ')} · </Text>}
-        <Text bold color={level(f.tokens)}>
-          {k(f.tokens)}
+      <Box flexDirection="row">
+        {beneath}
+        <Text>
+          {e.props.modes.length > 0 && <Text dimColor> · </Text>}
+          <Text bold color={level(f.tokens)}>
+            {k(f.tokens)}
+          </Text>
+          <Text dimColor> ({f.percent}%)</Text>
         </Text>
-        <Text dimColor> ({f.percent}%)</Text>
-      </Text>
+      </Box>
     )
   })
 }

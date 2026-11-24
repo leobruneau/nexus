@@ -1,0 +1,11 @@
+{
+  "context-alert": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./hooks/context-alert.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}

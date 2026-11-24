@@ -1,0 +1,7 @@
+{
+  "name": "nexus",
+  "displayName": "Nexus",
+  "version": "1.0.0",
+  "description": "Shared rules, subagents, and context-window alerts from the nexus home repository.",
+  "repository": "https://github.com/leobruneau/nexus"
+}

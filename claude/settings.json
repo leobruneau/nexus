@@ -1,6 +1,6 @@
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "{{HOME}}/.claude/mods/context-bar"
+    "CLAUDE_CODE_PLUGIN_DIRS": "{{CLAUDE_CONFIG_DIR}}/mods/context-bar"
   },
   "permissions": {
     "deny": [
@@ -20,28 +20,8 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "fable",
+  "model": "opus",
   "disableClaudeAiConnectors": true,
-  "skillOverrides": {
-    "handoff": "user-invocable-only",
-    "time-machine": "user-invocable-only",
-    "graphify": "user-invocable-only",
-    "plugin-authoring": "user-invocable-only",
-    "morning": "user-invocable-only",
-    "deep-research": "user-invocable-only",
-    "xlsx": "user-invocable-only",
-    "pdf": "user-invocable-only",
-    "import-memory": "user-invocable-only",
-    "docs": "user-invocable-only",
-    "skill-creator": "user-invocable-only",
-    "pptx": "user-invocable-only",
-    "google-workspace": "user-invocable-only",
-    "chrome-browser": "user-invocable-only",
-    "built-in-browser": "user-invocable-only",
-    "computer-use": "user-invocable-only",
-    "docx": "user-invocable-only",
-    "web-artifacts-builder": "user-invocable-only"
-  },
   "disableBundledSkills": true,
   "disableRemoteControl": false,
   "disableWorkflows": true,
@@ -52,37 +32,19 @@
     "claude-md-management@claude-plugins-official": false,
     "feature-dev@claude-plugins-official": false,
     "remember@claude-plugins-official": false,
-    "mattpocock-skills@claude-plugins-official": true,
-    "egm@egm": true
-  },
-  "extraKnownMarketplaces": {
-    "egm": {
-      "source": {
-        "source": "github",
-        "repo": "google/elephant-goldfish-model"
-      }
-    }
+    "mattpocock-skills@claude-plugins-official": true
   },
   "effortLevel": "medium",
-  "modelSettings": {
-    "claude-opus-5-5": {
-      "effortLevel": "high"
-    },
-    "claude-fable-5-2": {
-      "effortLevel": "high"
-    }
-  },
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
-  "agentPushNotifEnabled": true,
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "{{HOME}}/.claude/hooks/context-alert.sh"
+            "command": "{{CLAUDE_CONFIG_DIR}}/hooks/context-alert.sh"
           }
         ]
       }
@@ -93,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{HOME}}/.claude/hooks/context-alert.sh"
+            "command": "{{CLAUDE_CONFIG_DIR}}/hooks/context-alert.sh"
           }
         ]
       }
