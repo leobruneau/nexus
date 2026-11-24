@@ -19,23 +19,27 @@ never hold a branch the user wants to check out.
    time span, what it did, what it concluded, problems, whether it handed off cleanly or needed recovery.
    Where LOG.md is thin, read the session's transcript (`~/.claude/projects/*/<session id>*.jsonl`).
    `claude logs` returns screen text that was no use in earlier runs.
-3. Read the results: SUMMARY.md, PLAN.md and the outputs they cite. If SUMMARY.md is missing, say so and
-   work from PLAN.md, LOG.md and `results/`. Check numbers and claims against the raw files, the tracker
-   and LOG.md, and note mismatches. State whether the stop condition was met, or which backstop ended the
-   run. List the side effects of merging the results: new workflows or bots, schedules that start on
-   deploy, required settings or keys, migrations, issues that will close, new issues the run opened.
-   Before you recommend a step such as retargeting a change, check that it can still work.
+3. Read the results: SUMMARY.md, PLAN.md, `decisions.tsv` (if present) and the outputs they cite. If
+   SUMMARY.md is missing, say so and work from PLAN.md, LOG.md and `results/`. Audit `decisions.tsv`
+   against the final changes and flag any risky, reversed or unverified decisions. Check numbers and claims
+   against the raw files, the tracker and LOG.md, and note mismatches. State whether the stop condition
+   was met, or which backstop ended the run. List the side effects of merging the results: new workflows
+   or bots, schedules that start on deploy, required settings or keys, migrations, issues that will close,
+   new issues the run opened. Before you recommend a step such as retargeting a change, check that it can
+   still work.
 4. Write FINAL_SUMMARY.md in the run directory, about one page plus tables:
    - the goal in one sentence, the stop condition and what ended the run;
    - what was done (counts, method, limits met along the way);
    - results with evidence (tables, numbers, links to issues or commits);
    - what worked, what didn't, how sure, what still needs checking by hand;
    - each of the user's ideas and setup answers from MISSION.md and what the run did with it;
+   - key technical decisions from `decisions.tsv` (if present) and any audit findings;
    - blocked items and their reasons;
    - orchestrator timeline: session name ("<TAG> | O<N>"), session id, span, main actions, problems;
-   - "When you return": merge order, deploy steps and settings, the side effects from step 3, and
-     paste-ready commands for what the run could not do itself (the `! claude stop` lines from step 1,
-     superseded changes to close, worktrees and scratch branches to remove once merged).
+   - "When you return": merge order, deploy steps and settings, the side effects from step 3, a suggestion
+     to run `/improve-setup` if lessons or repeated friction accumulated during the run, and paste-ready
+     commands for what the run could not do itself (the `! claude stop` lines from step 1, superseded
+     changes to close, worktrees and scratch branches to remove once merged).
 5. Append `final summary written` to LOG.md with `<RUN_DIR>/tools/log.sh "final summary written"`, then
    stop. Your last message: headline findings in 150 words or fewer and the path to FINAL_SUMMARY.md.
 

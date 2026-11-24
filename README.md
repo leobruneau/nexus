@@ -13,8 +13,8 @@ README.md, SETUP.md              SETUP.md has steps for setting up a machine
 install.sh, capture.sh           install and reverse-sync scripts
 .claude/rules/authoring.md       authoring rules for Claude Code
 .agents/rules/authoring.md       authoring rules for Antigravity CLI
-rules/global.md                  shared global rules (writing, code style, ctx, authorship)
-skills/<name>/SKILL.md           shared skills (handoff, time-machine, unslop)
+rules/global.md                  shared global rules (writing, engineering discipline, code style, ctx, authorship)
+skills/<name>/SKILL.md           shared workflow and composable skills
 claude/                          Claude Code setup linked into ~/.claude
   CLAUDE.md, settings.json
   skills/unattended-run/
@@ -114,6 +114,26 @@ across every session under `repos/`.
   context-window usage, such as `29.2K / 1000K tokens (2.9%)`. Outside a
   session, pass `ctx <session-id>` and an optional `<max_tokens>`. It reads the
   latest token counts from the transcript and lags by one API call.
+- Workflow skills. Four end-to-end workflows compose the shared skills below:
+  - `/kickoff`. Turns a rough idea into a spec and ordered tickets using
+    `grilling`, `domain-modeling`, `codebase-design`, `prototype`, `to-spec`,
+    and `to-tickets`.
+  - `/execute-plan`. Carries out a spec or ticket queue with `tdd`,
+    `diagnosing-bugs`, `codebase-design`, and `architect`, logging technical
+    decisions with `show-me-your-work`.
+  - `/review`. Runs multi-axis `code-review` (Standards and Spec), adversarial
+    `interrogate`, `blast-radius`, `no-comments`, and hygiene checks.
+  - `/improve-setup`. Audits recent transcripts and decision logs with
+    `reflect`, `correct`, `improve-codebase-architecture`,
+    `create-verification-skill`, `maintain-verification-skill`, and
+    `writing-for-agents` to update rules and skills.
+- Composable skills in `skills/`. Available on their own or inside workflows:
+  `grilling`, `domain-modeling`, `codebase-design`, `to-spec`, `to-tickets`,
+  `prototype`, `tdd`, `diagnosing-bugs`, `architect`, `code-review`,
+  `interrogate`, `blast-radius`, `no-comments`, `pr`, `show-me-your-work`,
+  `create-verification-skill`, `maintain-verification-skill`,
+  `improve-codebase-architecture`, `correct`, `reflect`, `writing-for-agents`,
+  `handoff`, `time-machine`, and `unslop`.
 - `/handoff`. Writes a compact handoff file under
   `~/.local/share/nexus/handoffs/<project-slug>/` and prints commands to start a
   fresh session with it. To auto-inject the newest pending handoff on `/clear`,
@@ -129,9 +149,12 @@ across every session under `repos/`.
   and git history over a time window, then writes a chronological report to
   `~/time-machine-reports/`.
 - Shared sub-agents. Both harnesses define `implementer` for executing one
-  already-planned change, `reviewer` for read-only diff review, and
-  `test-runner` for running a test, build, or lint command and returning only
-  failures.
+  already-planned change, `reviewer` for read-only diff review, `test-runner`
+  for running a test, build, or lint command and returning only failures, and
+  `comment-sicko` for auditing and removing redundant or misleading comments.
+- Engineering discipline. `rules/global.md` sets shared defaults across every
+  repo for small changes, explicit error handling, testing real behavior, and
+  unslopped writing.
 
 ## Unattended runs
 
@@ -142,11 +165,44 @@ perl on macOS (the skill ships a `setsid` stand-in), a Claude Code build with
 keep it on power with the lid open (`caffeinate` stops idle sleep, closing the
 lid still sleeps).
 
+Setup can ingest `/kickoff` specs from `docs/specs/` or `.scratch/` into
+`inputs/` and import `/to-tickets` queues with blocking edges into `PLAN.md`.
+Orchestrators can record technical decisions in `decisions.tsv` via
+`show-me-your-work` while keeping `LOG.md` for watchdog and protocol lines.
+Combined-branch verification and PR creation wire `/review` and `/pr`, and the
+final summary audits `decisions.tsv` and suggests `/improve-setup` when lessons
+accumulate.
+
 ## What is tracked
 
 | Path | Goes to | Contents |
 |---|---|---|
-| `rules/global.md` | `~/.claude/nexus-global.md`, `~/.gemini/config/nexus-global.md` | Shared writing, code style, `ctx`, and authorship rules |
+| `rules/global.md` | `~/.claude/nexus-global.md`, `~/.gemini/config/nexus-global.md` | Shared writing, engineering discipline, code style, `ctx`, and authorship rules |
+| `skills/kickoff` | `~/.claude/skills/kickoff`, `~/.gemini/config/skills/kickoff`, `~/.gemini/antigravity-cli/skills/kickoff` | `/kickoff` shapes an idea into a spec and ticket queue |
+| `skills/execute-plan` | `~/.claude/skills/execute-plan`, `~/.gemini/config/skills/execute-plan`, `~/.gemini/antigravity-cli/skills/execute-plan` | `/execute-plan` executes a spec or ticket queue with TDD and decision logging |
+| `skills/review` | `~/.claude/skills/review`, `~/.gemini/config/skills/review`, `~/.gemini/antigravity-cli/skills/review` | `/review` runs Standards and Spec review, interrogation, blast-radius, and comment cleanup |
+| `skills/improve-setup` | `~/.claude/skills/improve-setup`, `~/.gemini/config/skills/improve-setup`, `~/.gemini/antigravity-cli/skills/improve-setup` | `/improve-setup` refines rules, skills, and verification checks from session history |
+| `skills/grilling` | `~/.claude/skills/grilling`, `~/.gemini/config/skills/grilling`, `~/.gemini/antigravity-cli/skills/grilling` | Questions a plan or requirement until ambiguities settle |
+| `skills/domain-modeling` | `~/.claude/skills/domain-modeling`, `~/.gemini/config/skills/domain-modeling`, `~/.gemini/antigravity-cli/skills/domain-modeling` | Sharpens domain terms, glossaries, and ADRs |
+| `skills/codebase-design` | `~/.claude/skills/codebase-design`, `~/.gemini/config/skills/codebase-design`, `~/.gemini/antigravity-cli/skills/codebase-design` | Designs module boundaries and deep interfaces |
+| `skills/to-spec` | `~/.claude/skills/to-spec`, `~/.gemini/config/skills/to-spec`, `~/.gemini/antigravity-cli/skills/to-spec` | Turns settled design notes into a written spec |
+| `skills/to-tickets` | `~/.claude/skills/to-tickets`, `~/.gemini/config/skills/to-tickets`, `~/.gemini/antigravity-cli/skills/to-tickets` | Splits a spec into ordered tickets with blocking edges |
+| `skills/prototype` | `~/.claude/skills/prototype`, `~/.gemini/config/skills/prototype`, `~/.gemini/antigravity-cli/skills/prototype` | Builds a throwaway prototype to test state or UI assumptions |
+| `skills/tdd` | `~/.claude/skills/tdd`, `~/.gemini/config/skills/tdd`, `~/.gemini/antigravity-cli/skills/tdd` | Test-driven red-green-refactor workflow |
+| `skills/diagnosing-bugs` | `~/.claude/skills/diagnosing-bugs`, `~/.gemini/config/skills/diagnosing-bugs`, `~/.gemini/antigravity-cli/skills/diagnosing-bugs` | Root-cause diagnosis loop for failures and regressions |
+| `skills/architect` | `~/.claude/skills/architect`, `~/.gemini/config/skills/architect`, `~/.gemini/antigravity-cli/skills/architect` | Reviews or plans cross-cutting architecture changes |
+| `skills/code-review` | `~/.claude/skills/code-review`, `~/.gemini/config/skills/code-review`, `~/.gemini/antigravity-cli/skills/code-review` | Parallel Standards and Spec review against a fixed base |
+| `skills/interrogate` | `~/.claude/skills/interrogate`, `~/.gemini/config/skills/interrogate`, `~/.gemini/antigravity-cli/skills/interrogate` | Adversarial questioning of changes for hidden flaws |
+| `skills/blast-radius` | `~/.claude/skills/blast-radius`, `~/.gemini/config/skills/blast-radius`, `~/.gemini/antigravity-cli/skills/blast-radius` | Traces callers, dependencies, and side effects of a diff |
+| `skills/no-comments` | `~/.claude/skills/no-comments`, `~/.gemini/config/skills/no-comments`, `~/.gemini/antigravity-cli/skills/no-comments` | Strips unnecessary comments and keeps only why-comments |
+| `skills/pr` | `~/.claude/skills/pr`, `~/.gemini/config/skills/pr`, `~/.gemini/antigravity-cli/skills/pr` | Writes pull request titles and bodies from the diff |
+| `skills/show-me-your-work` | `~/.claude/skills/show-me-your-work`, `~/.gemini/config/skills/show-me-your-work`, `~/.gemini/antigravity-cli/skills/show-me-your-work` | Logs technical decisions to `decisions.tsv` via `scripts/log.sh` |
+| `skills/create-verification-skill` | `~/.claude/skills/create-verification-skill`, `~/.gemini/config/skills/create-verification-skill`, `~/.gemini/antigravity-cli/skills/create-verification-skill` | Creates a repo-specific `verify-*` skill |
+| `skills/maintain-verification-skill` | `~/.claude/skills/maintain-verification-skill`, `~/.gemini/config/skills/maintain-verification-skill`, `~/.gemini/antigravity-cli/skills/maintain-verification-skill` | Updates a repo `verify-*` skill when checks drift |
+| `skills/improve-codebase-architecture` | `~/.claude/skills/improve-codebase-architecture`, `~/.gemini/config/skills/improve-codebase-architecture`, `~/.gemini/antigravity-cli/skills/improve-codebase-architecture` | Finds and resolves structural friction in a repo |
+| `skills/correct` | `~/.claude/skills/correct`, `~/.gemini/config/skills/correct`, `~/.gemini/antigravity-cli/skills/correct` | Captures user corrections into durable project rules |
+| `skills/reflect` | `~/.claude/skills/reflect`, `~/.gemini/config/skills/reflect`, `~/.gemini/antigravity-cli/skills/reflect` | Extracts recurring lessons from recent sessions |
+| `skills/writing-for-agents` | `~/.claude/skills/writing-for-agents`, `~/.gemini/config/skills/writing-for-agents`, `~/.gemini/antigravity-cli/skills/writing-for-agents` | Guides edits to skills, `AGENTS.md`, and `CLAUDE.md` |
 | `skills/handoff` | `~/.claude/skills/handoff`, `~/.gemini/config/skills/handoff`, `~/.gemini/antigravity-cli/skills/handoff` | `/handoff` writes a handoff file and starts or hooks a fresh session |
 | `skills/time-machine` | `~/.claude/skills/time-machine`, `~/.gemini/config/skills/time-machine`, `~/.gemini/antigravity-cli/skills/time-machine` | `/time-machine` reports past work from Claude Code, Antigravity CLI, and git history |
 | `skills/unslop` | `~/.claude/skills/unslop`, `~/.gemini/config/skills/unslop`, `~/.gemini/antigravity-cli/skills/unslop` | Writing rules that strip AI patterns from prose |
@@ -154,9 +210,9 @@ lid still sleeps).
 | `claude/settings.json` | merged into `~/.claude/settings.json` | Model, effort, permission mode, denied tools, hooks, plugins |
 | `claude/hooks/context-alert.sh` | `~/.claude/hooks/context-alert.sh` | Alerts once per session when context passes 100k, 125k, and 150k tokens |
 | `claude/skills/unattended-run` | `~/.claude/skills/unattended-run` | `/unattended-run` runs long tasks across chained background Claude sessions |
-| `claude/agents` | `~/.claude/agents/nexus` | Claude sub-agents (`implementer`, `reviewer`, `test-runner`) |
+| `claude/agents` | `~/.claude/agents/nexus` | Claude sub-agents (`implementer`, `reviewer`, `test-runner`, `comment-sicko`) |
 | `claude/mods/context-bar` | `~/.claude/mods/context-bar` | Local Claude Code plugin showing context usage in the footer |
-| `antigravity/` | `~/.gemini/config/plugins/nexus` | Antigravity plugin: rules, sub-agents (`implementer`, `reviewer`, `test-runner`), `PreInvocation` context alert hook |
+| `antigravity/` | `~/.gemini/config/plugins/nexus` | Antigravity plugin: rules, sub-agents (`implementer`, `reviewer`, `test-runner`, `comment-sicko`), `PreInvocation` context alert hook |
 | `bin/ctx` | `~/.local/bin/ctx` | Prints context-window usage for Claude Code or Antigravity CLI |
 
 Not tracked: `~/.claude.json`, `~/.gemini/config/config.json`, session history,

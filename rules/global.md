@@ -19,6 +19,16 @@ Write code in the style of the Rails doctrine (rubyonrails.org/doctrine) and 37s
 - Test behavior through the public interface. Use real objects and the real database, and mock only at the edge of the system, like an external HTTP API.
 - Before you finish, reread the whole diff. Rename, reorder, and cut until removing any line would lose behavior or clarity.
 
+# Engineering discipline
+
+- Prove it works. Verify against the real artifact by running the feature, reading actual output, and inspecting the diff. Proxies and "it compiles" do not count.
+- Fix root causes. Trace symptoms to the first wrong decision and fix the pattern, not one site. Add guards only for legitimate states.
+- Attack the premise. When two fixes sharing one assumption fail the same check, write the assumption down and test it directly before trying another fix.
+- Boundary discipline. Validate and parse raw input at system boundaries such as CLI arguments, config files, network calls, and external APIs. Trust domain types inside and keep business logic in pure functions.
+- Make operations idempotent. Derive state-changing steps from current state so retries and partial crashes converge cleanly. Write to a temp file and rename into place.
+- Separate before serializing shared state. Give concurrent workers their own files, branches, or worktrees and merge at read time. Use locks only when one shared writer is a real invariant.
+- Encode lessons in structure. When a mistake repeats, fix it with architecture, types, a lint, or a test instead of adding more prose rules.
+
 # Context usage
 
 Run `ctx` (in `~/.local/bin` or `$NEXUS_BIN_DIR`) to check this session's context-window usage, e.g. `29.2K / 1000K tokens (2.9%)`. It reads the latest token counts from the session transcript in Claude Code or Antigravity CLI and lags by one API call.

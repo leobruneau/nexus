@@ -87,7 +87,9 @@ messages, spending money.
    a reply of 150 words or fewer. Subagents don't commit, push or write to outside systems.
 5. Log every decision (with reason), result (with numbers) and failure in LOG.md with
    `RUN/tools/log.sh "O<N>: <text>"`. It takes the time from the clock. Never type or estimate a time,
-   in LOG.md or in any other file.
+   in LOG.md or in any other file. When the run uses `RUN/decisions.tsv`, log human-auditable technical
+   decisions there via `~/.claude/skills/show-me-your-work/scripts/log.sh` while keeping LOG.md for
+   protocol lines, stop checks, results and failures.
 6. Never go more than 20 minutes without a LOG.md line. The watchdog launches a new orchestrator after
    <WATCHDOG_MIN> silent minutes.
 7. Never write or reword the lines the scripts read: `launch orchestrator N <id>`,
@@ -122,7 +124,9 @@ messages, spending money.
   in flight. Check `inputs/` and `results/` for an existing answer first. Reorder only with a dated entry
   in PLAN.md's Changes section. An item whose subagent has finished is `review` until you have reviewed it.
 - Review: read every diff yourself, against how the user will use the change, before it leaves the
-  workspace. Run `RUN/tools/<checks script>`. For changes the user sees, run the app and look.
+  workspace. Run `RUN/tools/<checks script>`. For changes the user sees, run the app and look. For
+  final or combined-branch verification, follow `~/.claude/skills/review/SKILL.md` and any repo
+  `verify-*` skill.
 - Failures: log the error and add an attempt in PLAN.md. The attempts column counts failed attempts
   only, so an item that works on the first try keeps 0. Retry while attempts are below <RETRIES>, then
   mark the item blocked. A subagent that doesn't report within its expected time counts as a failure.
@@ -143,8 +147,9 @@ messages, spending money.
 ## Documents in the run directory
 
 MISSION.md (this file, read-only), SUMMARIZER.md (final summary brief, read-only), COORDINATOR.md (facts,
-tools, lessons, State), PLAN.md (work queue and dated changes), LOG.md (append-only), ROOT_HANDOFF.md
-(root's notes), SUMMARY.md (last orchestrator), FINAL_SUMMARY.md (final summary session). `inputs/` holds
-earlier results and data the run may reuse, each listed in `inputs/README.md`. `tools/` holds run.env and
-the scripts. `results/` holds everything the run produces, including `WORKFLOW.md` (role briefs). Name any
-input you reuse in LOG.md.
+tools, lessons, State), PLAN.md (work queue and dated changes), LOG.md (append-only protocol and status log),
+decisions.tsv (optional append-only technical decision log, written with `~/.claude/skills/show-me-your-work/scripts/log.sh`),
+ROOT_HANDOFF.md (root's notes), SUMMARY.md (last orchestrator), FINAL_SUMMARY.md (final summary session).
+`inputs/` holds earlier results and data the run may reuse, each listed in `inputs/README.md`. `tools/`
+holds run.env and the scripts. `results/` holds everything the run produces, including `WORKFLOW.md` (role
+briefs). Name any input you reuse in LOG.md.
