@@ -16,6 +16,7 @@ claude_src="$repo/claude"
 agy_src="$repo/antigravity"
 claude_dest="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 agy_dest="${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/config}"
+agy_app_data="${ANTIGRAVITY_APP_DATA_DIR:-$HOME/.gemini/antigravity-cli}"
 bindir="${NEXUS_BIN_DIR:-$HOME/.local/bin}"
 datadir="${NEXUS_DATA_DIR:-$HOME/.local/share/nexus}"
 ts="$(date +%Y%m%d-%H%M%S)"
@@ -237,7 +238,7 @@ if ((install_claude)); then
 fi
 
 if ((install_agy)); then
-  run mkdir -p "$agy_dest/plugins" "$agy_dest/skills"
+  run mkdir -p "$agy_dest/plugins" "$agy_dest/skills" "$agy_app_data/skills"
 
   link_item "$agy_src" "$agy_dest/plugins/nexus" "$agy_backup" "plugins/nexus"
   link_item "$repo/rules/global.md" "$agy_dest/nexus-global.md" "$agy_backup" "nexus-global.md"
@@ -247,6 +248,16 @@ if ((install_agy)); then
     d="${d%/}"
     name="$(basename "$d")"
     link_item "$d" "$agy_dest/skills/$name" "$agy_backup" "skills/$name"
+    link_item "$d" "$agy_app_data/skills/$name" "$agy_backup" "antigravity-cli/skills/$name"
+    for shadow_root in "$HOME/.agents/skills" "$HOME/.gemini/skills"; do
+      [[ "$shadow_root" == "$agy_dest/skills" || "$shadow_root" == "$agy_app_data/skills" ]] && continue
+      shadow="$shadow_root/$name"
+      if [[ -e "$shadow" || -L "$shadow" ]]; then
+        if [[ ! -L "$shadow" || "$(readlink "$shadow")" != "$d" ]]; then
+          echo "warn    $shadow may shadow nexus skill $name (remove or rename it to avoid conflicts)" >&2
+        fi
+      fi
+    done
   done
 fi
 
