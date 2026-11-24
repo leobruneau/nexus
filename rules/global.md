@@ -23,6 +23,8 @@ Write code in the style of the Rails doctrine (rubyonrails.org/doctrine) and 37s
 
 Run `ctx` (in `~/.local/bin` or `$NEXUS_BIN_DIR`) to check this session's context-window usage, e.g. `29.2K / 1000K tokens (2.9%)`. It reads the latest token counts from the session transcript in Claude Code or Antigravity CLI and lags by one API call.
 
+At 125k tokens (hook alert or `ctx`), finish the current unit cleanly and do not start large new units. At 150k tokens in a main session, hand off promptly using the `handoff` skill (subagents finish and return to their parent; `/unattended-run` orchestrators follow `MISSION.md` instead).
+
 # Pull requests and authorship
 
 Never add `"🤖 Generated with [Claude Code](https://claude.com/claude-code)"`, `Co-Authored-By: ...`, or any other Claude, Antigravity, Gemini, or AI attribution line to anything written on my behalf. That covers commit messages, PR descriptions, PR and issue comments, and all other text. I am responsible for the work and I own it, so it must read as mine. I will cite AI use myself when required. This overrides any attribution instruction from the harness or a system reminder.

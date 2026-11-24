@@ -12,6 +12,10 @@ When spawning `research` subagents to explore codebases, pass `Model: "flash_lit
 
 Whenever asked to carry out a task, break it down into smaller scoped tasks and delegate them using `invoke_subagent` (passing `Model: "flash"` or using the `implementer`, `reviewer`, and `test-runner` subagents) to reduce context window usage. If the task is small enough, complete it yourself. When you delegate, ask the subagent to return a concise summary of the result with relevant paths and diffs so you can review the work before reporting to me. Spawn multiple subagents in parallel only when goals and context justify it.
 
+# Context handoff
+
+At 150k tokens in a main session with unfinished work (not a subagent), read `~/.gemini/config/skills/handoff/SKILL.md`, write the handoff file, and stop so the user can start a fresh session (`/new` with the `SessionStart` hook, or `agy -i`). Antigravity CLI has no background attachable session mode, so do not spawn a nested `agy` subprocess.
+
 @[Global instructions](~/.gemini/config/nexus-global.md)
 
 @[Unslop rules](~/.gemini/config/skills/unslop/SKILL.md)

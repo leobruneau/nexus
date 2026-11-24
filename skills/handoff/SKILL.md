@@ -131,9 +131,24 @@ to conserve.
 
 ## 3. Start the fresh session
 
-Print the path, then offer both routes. Do not run `claude` or `agy` yourself
-from a tool call, because a nested subprocess is not a session the user can talk
-to.
+Never run interactive `claude` or `agy` from a tool call, because a nested interactive subprocess is not a session the user can talk to. In Claude Code, only `scripts/spawn_claude.sh` (which uses `claude --bg`) may launch a successor session.
+
+**Route C: automated background continuation (Claude Code, `claude --bg`)**:
+
+Run Route C automatically in Claude Code when triggered by the 150k context warning (or when the user asks to hand off and continue automatically), only when all of these hold:
+- You are a main session (not a subagent).
+- You are not an `/unattended-run` orchestrator (which follows `MISSION.md` and `tools/launch_orchestrator.sh`).
+- `Next action` has concrete autonomous work not blocked on a user decision.
+
+Use Route A or Route B instead when the user ran `/handoff` to pause work, when the next step needs a user decision, when running in Antigravity CLI (`agy` has no `--bg` attachable session mode), or when `spawn_claude.sh` fails or hits the chain cap.
+
+To run Route C:
+1. Cancel your own wait loops, timers, and monitors before spawning.
+2. Run `~/.claude/skills/handoff/scripts/spawn_claude.sh <handoff-path>` (passing `--tag <tag> --gen <N+1> --max <max>` when continuing a chain).
+3. Stop working immediately. Report the handoff path, new session name and ID, and `claude attach <id>`, `claude agents`, and `claude stop <id>`.
+4. If already-running subagents report late, do not resume task work; note their report paths only.
+
+`spawn_claude.sh` atomically claims `.md` to `.md.done` before launching `claude --bg` (avoiding races with Route B's `SessionStart` hook), rolls back to `.md` if launch fails, and enforces a default chain limit of 5 (`HANDOFF_MAX_GEN`).
 
 **Route A: new terminal, handoff as the opening message** (nothing to install;
 skip Route A if you already installed Route B's hook so the new session does not

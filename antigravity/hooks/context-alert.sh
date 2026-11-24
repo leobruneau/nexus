@@ -64,10 +64,11 @@ fi
 
 ((level > 10#$last)) || noop
 
+handoff_dir="${ANTIGRAVITY_CONFIG_DIR:-~/.gemini/config}/skills/handoff"
 case $level in
   100000) msg="100k context window reached." ;;
-  125000) msg="125k context window reached. Please start thinking about handing off the task." ;;
-  150000) msg="150k context window reached. Please hand off the task ASAP." ;;
+  125000) msg="125k context window reached. Finish the current unit cleanly and prepare to hand off." ;;
+  150000) msg="150k context window reached. Hand off ASAP: follow ${handoff_dir}/SKILL.md to write a handoff file and stop for a fresh session (skip if you are a subagent or finished)." ;;
   *) noop ;;
 esac
 

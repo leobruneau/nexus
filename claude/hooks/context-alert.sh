@@ -65,10 +65,11 @@ fi
 
 ((level > 10#$last)) || exit 0
 
+handoff_dir="${CLAUDE_CONFIG_DIR:-~/.claude}/skills/handoff"
 case $level in
   100000) msg="100k context window reached." ;;
-  125000) msg="125k context window reached. Please start thinking about handing off the task." ;;
-  150000) msg="150k context window reached. Please hand off the task ASAP." ;;
+  125000) msg="125k context window reached. Finish the current unit cleanly and prepare to hand off." ;;
+  150000) msg="150k context window reached. Hand off ASAP: follow ${handoff_dir}/SKILL.md and spawn a continuation session with ${handoff_dir}/scripts/spawn_claude.sh (skip auto-spawn if you are a subagent, blocked on user input, finished, or an /unattended-run orchestrator following MISSION.md)." ;;
   *) exit 0 ;;
 esac
 
