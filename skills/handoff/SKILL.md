@@ -1,6 +1,7 @@
 ---
 name: handoff
 description: Write a compact handoff document for a fresh session when hitting context limits or pausing work, then point a new session to it.
+argument-hint: "What will the next session focus on?"
 disable-model-invocation: true
 ---
 
@@ -51,7 +52,9 @@ for. Keep handoffs out of the repo checkout so they never show up in
 
 Use this structure. Drop sections that are genuinely empty rather than padding
 them with "N/A". On a long session, empty "Dead ends" or "Decisions" sections
-usually mean you did not look hard enough.
+usually mean you did not look hard enough. If the user passed arguments to
+`/handoff`, treat them as what the next session will focus on and tailor the
+handoff accordingly.
 
 ```markdown
 # Handoff: <topic in one line>
@@ -108,6 +111,9 @@ fabricated hypothesis sends the successor down a false trail.>
 the file to edit, the command to run, the question to answer. Then a short
 ordered list of what follows.>
 
+## Suggested skills
+<Skills the successor should invoke or read for the next step (for example, `tdd`, `diagnosing-bugs`, `writing-for-agents`, `/review`, or a repo-local `verify-*` skill). Omit if none apply.>
+
 ## Open questions for the user
 <Anything you would have asked if the session had continued. Flag which ones
 block progress and which can be assumed past.>
@@ -124,10 +130,13 @@ been made yet; otherwise a path and line range is strictly better, because a
 quoted snippet silently goes stale and a path cannot.
 
 Write for an agent reader: paths over prose, exact commands over descriptions of
-commands, no hedging and no preamble. Length follows the work. A two-hour
-debugging session earns a page; a small feature earns a few paragraphs. Padding
-costs the successor context, which is the one thing this whole exercise exists
-to conserve.
+commands, no hedging and no preamble. Do not duplicate content already captured
+in other artifacts (specs, plans, ADRs, issues, commits, or diffs); reference
+them by path or URL instead. Redact sensitive information (API keys, tokens,
+passwords, and personally identifiable information) before writing the file.
+Length follows the work. A two-hour debugging session earns a page; a small
+feature earns a few paragraphs. Padding costs the successor context, which is
+the one thing this whole exercise exists to conserve.
 
 ## 3. Start the fresh session
 
