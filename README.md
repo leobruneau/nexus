@@ -145,6 +145,7 @@ across every session under `repos/`.
   ```
 
   Pass `--claude` or `--antigravity` to register the hook for one harness only.
+  In Claude Code, crossing 150k tokens triggers automated handoff via `skills/handoff/scripts/spawn_claude.sh` (`claude --bg`), printing `claude attach <id>` so work continues in a fresh background session (capped at 5 chained handoffs by default via `HANDOFF_MAX_GEN`).
 - `/time-machine`. Mines Claude Code transcripts, Antigravity CLI transcripts,
   and git history over a time window, then writes a chronological report to
   `~/time-machine-reports/`.

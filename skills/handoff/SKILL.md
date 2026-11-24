@@ -1,6 +1,7 @@
 ---
 name: handoff
 description: Write a compact handoff document for a fresh session when hitting context limits or pausing work, then point a new session to it.
+argument-hint: "What will the next session focus on?"
 disable-model-invocation: true
 ---
 
@@ -51,7 +52,9 @@ for. Keep handoffs out of the repo checkout so they never show up in
 
 Use this structure. Drop sections that are genuinely empty rather than padding
 them with "N/A". On a long session, empty "Dead ends" or "Decisions" sections
-usually mean you did not look hard enough.
+usually mean you did not look hard enough. If the user passed arguments to
+`/handoff`, treat them as what the next session will focus on and tailor the
+handoff accordingly.
 
 ```markdown
 # Handoff: <topic in one line>
@@ -108,6 +111,9 @@ fabricated hypothesis sends the successor down a false trail.>
 the file to edit, the command to run, the question to answer. Then a short
 ordered list of what follows.>
 
+## Suggested skills
+<Skills the successor should invoke or read for the next step (for example, `tdd`, `diagnosing-bugs`, `writing-for-agents`, `/review`, or a repo-local `verify-*` skill). Omit if none apply.>
+
 ## Open questions for the user
 <Anything you would have asked if the session had continued. Flag which ones
 block progress and which can be assumed past.>
@@ -124,16 +130,34 @@ been made yet; otherwise a path and line range is strictly better, because a
 quoted snippet silently goes stale and a path cannot.
 
 Write for an agent reader: paths over prose, exact commands over descriptions of
-commands, no hedging and no preamble. Length follows the work. A two-hour
-debugging session earns a page; a small feature earns a few paragraphs. Padding
-costs the successor context, which is the one thing this whole exercise exists
-to conserve.
+commands, no hedging and no preamble. Do not duplicate content already captured
+in other artifacts (specs, plans, ADRs, issues, commits, or diffs); reference
+them by path or URL instead. Redact sensitive information (API keys, tokens,
+passwords, and personally identifiable information) before writing the file.
+Length follows the work. A two-hour debugging session earns a page; a small
+feature earns a few paragraphs. Padding costs the successor context, which is
+the one thing this whole exercise exists to conserve.
 
 ## 3. Start the fresh session
 
-Print the path, then offer both routes. Do not run `claude` or `agy` yourself
-from a tool call, because a nested subprocess is not a session the user can talk
-to.
+Never run interactive `claude` or `agy` from a tool call, because a nested interactive subprocess is not a session the user can talk to. In Claude Code, only `scripts/spawn_claude.sh` (which uses `claude --bg`) may launch a successor session.
+
+**Route C: automated background continuation (Claude Code, `claude --bg`)**:
+
+Run Route C automatically in Claude Code when triggered by the 150k context warning (or when the user asks to hand off and continue automatically), only when all of these hold:
+- You are a main session (not a subagent).
+- You are not an `/unattended-run` orchestrator (which follows `MISSION.md` and `tools/launch_orchestrator.sh`).
+- `Next action` has concrete autonomous work not blocked on a user decision.
+
+Use Route A or Route B instead when the user ran `/handoff` to pause work, when the next step needs a user decision, when running in Antigravity CLI (`agy` has no `--bg` attachable session mode), or when `spawn_claude.sh` fails or hits the chain cap.
+
+To run Route C:
+1. Cancel your own wait loops, timers, and monitors before spawning.
+2. Run `~/.claude/skills/handoff/scripts/spawn_claude.sh <handoff-path>` (passing `--tag <tag> --gen <N+1> --max <max>` when continuing a chain).
+3. Stop working immediately. Report the handoff path, new session name and ID, and `claude attach <id>`, `claude agents`, and `claude stop <id>`.
+4. If already-running subagents report late, do not resume task work; note their report paths only.
+
+`spawn_claude.sh` atomically claims `.md` to `.md.done` before launching `claude --bg` (avoiding races with Route B's `SessionStart` hook), rolls back to `.md` if launch fails, and enforces a default chain limit of 5 (`HANDOFF_MAX_GEN`).
 
 **Route A: new terminal, handoff as the opening message** (nothing to install;
 skip Route A if you already installed Route B's hook so the new session does not
