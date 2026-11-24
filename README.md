@@ -13,7 +13,7 @@ README.md, SETUP.md              SETUP.md has steps for setting up a machine
 install.sh, capture.sh           install and reverse-sync scripts
 .claude/rules/authoring.md       authoring rules for Claude Code
 .agents/rules/authoring.md       authoring rules for Antigravity CLI
-rules/global.md                  shared global rules (writing, engineering discipline, code style, ctx, authorship)
+rules/global.md                  shared global rules (writing, engineering discipline, code style, workflows, ctx, authorship)
 skills/<name>/SKILL.md           shared workflow and composable skills
 claude/                          Claude Code setup linked into ~/.claude
   CLAUDE.md, settings.json
@@ -108,6 +108,10 @@ Antigravity CLI, workspace rule walking stops at each repo's `.git`, so the
 `nexus` global plugin provides the workspace instructions and global rules
 across every session under `repos/`.
 
+You can keep an optional gitignored `repos/INDEX.md` (for example, listing
+`my-project` stacks, doc paths, and test commands) so agents working from
+`~/nexus` can locate and switch projects without scanning every repo.
+
 ## Daily usage
 
 - `ctx`. Run `ctx` inside a Claude Code or Antigravity CLI session to print
@@ -178,7 +182,7 @@ accumulate.
 
 | Path | Goes to | Contents |
 |---|---|---|
-| `rules/global.md` | `~/.claude/nexus-global.md`, `~/.gemini/config/nexus-global.md` | Shared writing, engineering discipline, code style, `ctx`, and authorship rules |
+| `rules/global.md` | `~/.claude/nexus-global.md`, `~/.gemini/config/nexus-global.md` | Shared writing, engineering discipline, code style, workflows, `ctx` handoffs, and authorship rules |
 | `skills/kickoff` | `~/.claude/skills/kickoff`, `~/.gemini/config/skills/kickoff`, `~/.gemini/antigravity-cli/skills/kickoff` | `/kickoff` shapes an idea into a spec and ticket queue |
 | `skills/execute-plan` | `~/.claude/skills/execute-plan`, `~/.gemini/config/skills/execute-plan`, `~/.gemini/antigravity-cli/skills/execute-plan` | `/execute-plan` executes a spec or ticket queue with TDD and decision logging |
 | `skills/review` | `~/.claude/skills/review`, `~/.gemini/config/skills/review`, `~/.gemini/antigravity-cli/skills/review` | `/review` runs Standards and Spec review, interrogation, blast-radius, and comment cleanup |
@@ -204,7 +208,7 @@ accumulate.
 | `skills/correct` | `~/.claude/skills/correct`, `~/.gemini/config/skills/correct`, `~/.gemini/antigravity-cli/skills/correct` | Captures user corrections into durable project rules |
 | `skills/reflect` | `~/.claude/skills/reflect`, `~/.gemini/config/skills/reflect`, `~/.gemini/antigravity-cli/skills/reflect` | Extracts recurring lessons from recent sessions |
 | `skills/writing-for-agents` | `~/.claude/skills/writing-for-agents`, `~/.gemini/config/skills/writing-for-agents`, `~/.gemini/antigravity-cli/skills/writing-for-agents` | Guides edits to skills, `AGENTS.md`, and `CLAUDE.md` |
-| `skills/handoff` | `~/.claude/skills/handoff`, `~/.gemini/config/skills/handoff`, `~/.gemini/antigravity-cli/skills/handoff` | `/handoff` writes a handoff file and starts or hooks a fresh session |
+| `skills/handoff` | `~/.claude/skills/handoff`, `~/.gemini/config/skills/handoff`, `~/.gemini/antigravity-cli/skills/handoff` | `/handoff` writes a handoff file and hooks or spawns a fresh background Claude session |
 | `skills/time-machine` | `~/.claude/skills/time-machine`, `~/.gemini/config/skills/time-machine`, `~/.gemini/antigravity-cli/skills/time-machine` | `/time-machine` reports past work from Claude Code, Antigravity CLI, and git history |
 | `skills/unslop` | `~/.claude/skills/unslop`, `~/.gemini/config/skills/unslop`, `~/.gemini/antigravity-cli/skills/unslop` | Writing rules that strip AI patterns from prose |
 | `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Imports `nexus-global.md` and `unslop`, plus Claude delegation rules |

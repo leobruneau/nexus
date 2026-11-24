@@ -29,6 +29,18 @@ Write code in the style of the Rails doctrine (rubyonrails.org/doctrine) and 37s
 - Separate before serializing shared state. Give concurrent workers their own files, branches, or worktrees and merge at read time. Use locks only when one shared writer is a real invariant.
 - Encode lessons in structure. When a mistake repeats, fix it with architecture, types, a lint, or a test instead of adding more prose rules.
 
+# Workflows and sub-agents
+
+Pick the workflow matching the stage of work. Smaller composable skills in `skills/` already have their descriptions in context.
+
+- `/kickoff`: turns an idea into a settled domain model, spec, and ticket graph.
+- `/execute-plan`: implements a spec or ticket graph interactively across `implementer` and `test-runner` sub-agents.
+- `/unattended-run`: runs a long Claude Code backlog or sweep unattended across chained background sessions, optionally ingesting `/kickoff` specs and tickets.
+- `/review`: runs parallel isolated reviews for standards, spec, proven bugs, blast radius, and hygiene before opening a PR.
+- `/improve-setup`: audits recent transcripts and decision logs to refine repo checks, rules, and Nexus skills.
+
+Shared sub-agents: `implementer` executes one planned change, `reviewer` reviews diffs read-only, `test-runner` runs tests and returns only failures, and `comment-sicko` audits or strips unnecessary comments.
+
 # Context usage
 
 Run `ctx` (in `~/.local/bin` or `$NEXUS_BIN_DIR`) to check this session's context-window usage, e.g. `29.2K / 1000K tokens (2.9%)`. It reads the latest token counts from the session transcript in Claude Code or Antigravity CLI and lags by one API call.

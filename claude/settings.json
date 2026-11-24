@@ -32,7 +32,7 @@
     "claude-md-management@claude-plugins-official": false,
     "feature-dev@claude-plugins-official": false,
     "remember@claude-plugins-official": false,
-    "mattpocock-skills@claude-plugins-official": true
+    "mattpocock-skills@claude-plugins-official": false
   },
   "effortLevel": "medium",
   "tui": "fullscreen",
