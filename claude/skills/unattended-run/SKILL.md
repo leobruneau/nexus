@@ -1,6 +1,6 @@
 ---
 name: unattended-run
-description: Run a long task unattended (experiment search, issue backlog, refactor, sweep, literature review) through a chain of orchestrator sessions with a fixed mission file, a stop condition with backstops, context-based handoffs, a watchdog and a final summary session.
+description: Run a long task unattended through chained background orchestrator sessions with a fixed mission, stop conditions, watchdog, and final summary.
 disable-model-invocation: true
 ---
 
@@ -72,6 +72,7 @@ unattended-run-<YYYY-MM-DD-HHMM>-<TAG>/
   COORDINATOR.md     facts, tools, lessons and the current State
   PLAN.md            work queue with a status per item, and dated changes
   LOG.md             append-only log; the scripts read some of its lines
+  decisions.tsv      optional append-only table of technical decisions (written with show-me-your-work's log.sh)
   ROOT_HANDOFF.md    what root set up and what is left to do at the end
   inputs/            earlier results, data and notes the run may reuse, each described in inputs/README.md
   tools/             run.env, this skill's scripts, the run's own scripts, work.pids and timer.pids
@@ -133,10 +134,13 @@ in one run and wrote them 15 minutes ahead of the clock.
 
 ## Setup (root)
 
-1. Ask the user, in one message. If an earlier `unattended-run-*` folder exists for the same project,
-   read its MISSION.md first and offer its answers as defaults, so the user only answers what differs.
-   In two runs in a row the user accepted the same run directory, outside actions, permission mode and
-   limits "as proposed".
+1. Ask the user, in one message. First check for `/kickoff` outputs in the project (spec files in
+   `docs/specs/` or `.scratch/`, and ticket files produced by `/to-tickets`) and for an earlier
+   `unattended-run-*` folder for the same project. If `/kickoff` outputs exist, offer to ingest the
+   spec into `inputs/` and import the tickets and their blocking edges into `PLAN.md`. If an earlier
+   run exists, read its MISSION.md first and offer its answers as defaults, so the user only answers
+   what differs. In two runs in a row the user accepted the same run directory, outside actions,
+   permission mode and limits "as proposed".
    - Where to put the run directory. Suggest the folder next to the earlier runs, or the project root,
      and say whether version control ignores that path.
    - The stop condition. It can be a time ("by 08:00"), a completion criterion ("every open issue in the
@@ -190,8 +194,9 @@ in one run and wrote them 15 minutes ahead of the clock.
 5. Pick TAG from the goal and check it with `scripts/check_tag.sh` from this skill's folder. Create
    the run directory with the layout above. Fill in MISSION.md, SUMMARIZER.md, COORDINATOR.md,
    PLAN.md, run.env and results/WORKFLOW.md from this skill's `templates/` folder, copy `scripts/` into
-   `tools/` and make the scripts executable. Create an empty LOG.md. Make MISSION.md and SUMMARIZER.md
-   read-only.
+   `tools/` and make the scripts executable. When ingesting `/kickoff` outputs, import the tickets from
+   `/to-tickets` and their blocking edges into `PLAN.md`'s queue and `depends on` column. Create an
+   empty LOG.md. Make MISSION.md and SUMMARIZER.md read-only.
    - Write `results/WORKFLOW.md` yourself: one brief per subagent role, the outputs each writes to
      `results/`, and the policy for settling review findings without the user. In one run orchestrator 1
      wrote it, and spent its first context on that.
@@ -200,11 +205,13 @@ in one run and wrote them 15 minutes ahead of the clock.
      gate; scripts to start and stop the app for a hands-on check; a browser runner if the work has a UI.
      A CI job the local checks script skipped turned two pull requests red after they opened. Tools copied
      from an earlier run carry its paths and PREFIX; read them from `run.env` instead.
-6. Fill `inputs/`. Look for earlier `unattended-run-*` folders in the parent folder of the run directory,
-   and in the places the user or the project names. Link what the plan will use, and describe each item
-   in `inputs/README.md`: where it came from and what it shows. Read each earlier run's FINAL_SUMMARY.md
-   and COORDINATOR.md lessons, and copy the ones that still apply into COORDINATOR.md "Lessons from earlier
-   runs". If nothing applies, write that in the file.
+6. Fill `inputs/`. If `/kickoff` produced spec files (in `docs/specs/` or `.scratch/`) or ticket
+   files, copy or link them into `inputs/` and record them in `inputs/README.md`. Look for earlier
+   `unattended-run-*` folders in the parent folder of the run directory, and in the places the user or
+   the project names. Link what the plan will use, and describe each item in `inputs/README.md`: where
+   it came from and what it shows. Read each earlier run's FINAL_SUMMARY.md and COORDINATOR.md lessons,
+   and copy the ones that still apply into COORDINATOR.md "Lessons from earlier runs". If nothing
+   applies, write that in the file.
 7. Show the user the whole setup in one message: run directory, TAG and the session names it gives,
    workspace, the goal as quoted, the stop condition with its check and backstops, STOP_AT and
    SUMMARY_AT, allowed outside actions, permission mode, the constraints copied and the first PLAN.md
@@ -273,9 +280,12 @@ Retelling drifts from what the user asked.
 - `results/WORKFLOW.md` holds the subagent role briefs. When a lesson shows a brief is wrong, fix the
   brief as well as noting the lesson. In one run COORDINATOR.md recorded that a file list in a brief was
   wrong, and the brief stayed wrong for the rest of the run.
-- `LOG.md` is append-only, one timestamped line per decision, result, launch, handoff, stop check and
-  failure. Agents write it with `tools/log.sh`. Orchestrators that typed their own times wrote lines up
-  to an hour ahead of the clock.
+- `LOG.md` is append-only, one timestamped line per result, launch, handoff, stop check and failure,
+  preserving the protocol lines the watchdog and orchestrator scripts read. Agents write it with
+  `tools/log.sh`. Orchestrators that typed their own times wrote lines up to an hour ahead of the clock.
+- `decisions.tsv` is an optional append-only table for human-auditable technical decisions, managed via
+  `~/.claude/skills/show-me-your-work/scripts/log.sh`. Keep `LOG.md` for watchdog and orchestrator
+  protocol lines alongside it.
 - `inputs/README.md` lists the reusable material. An agent that reuses an input names it in LOG.md.
 - `SUMMARY.md` comes from the last orchestrator and `FINAL_SUMMARY.md` from the final summary session.
 
@@ -386,13 +396,16 @@ same line of one file.
   5. Prove the final set: merge every final branch, in the planned order, into a local scratch branch and
      run the full checks, code generation and an app check on it. In one run this found two breaks that
      merged without a textual conflict.
-  6. Review the combined branch with fresh subagents that didn't write the code, one per area, with a
-     list of what to look for: data loss, behaviour in the first minutes after deploy (schedules, new
-     automation, bots or workflows, new required settings), races, and regressions in existing flows. In
-     both runs, a review like this, done the next morning at the user's request, found 3 to 7 real
-     defects that every per-item check had passed.
-  7. If the user asked for a combined branch or pull request, open it from the proven branch, with a
-     deploy checklist in its body: settings and keys to add, migrations, one-off steps.
+  6. Review the combined branch with fresh subagents that didn't write the code following
+     `~/.claude/skills/review/SKILL.md` (multi-axis Standards and Spec review, adversarial
+     `interrogate`, `blast-radius`, `no-comments` and hygiene), plus checks for data loss, behaviour in
+     the first minutes after deploy (schedules, new automation, bots or workflows, new required
+     settings), races, regressions in existing flows, and any repo `verify-*` skill if present. In both
+     runs, a review like this, done the next morning at the user's request, found 3 to 7 real defects
+     that every per-item check had passed.
+  7. If the user asked for a combined branch or pull request, open it from the proven branch following
+     `~/.claude/skills/pr/SKILL.md`, with a deploy checklist in its body: settings and keys to add,
+     migrations, one-off steps.
 - A branch replaced by a group stays open with a "superseded by" comment, unless MISSION.md allows
   closing it and the permission check lets you. List the ones to close for the user.
 

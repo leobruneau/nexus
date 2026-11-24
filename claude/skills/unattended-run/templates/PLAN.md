@@ -16,8 +16,8 @@ action MISSION.md doesn't allow. If the clock runs short, this order is the prio
 |---|---|---|---|---|---|
 | 1 | <unit of work> | | todo | 0 | |
 | I | <when items make separate branches> Integrate: scan for conflicting pairs, remove hotspots, group what still conflicts, merge every final branch into a scratch branch and run the full checks and an app check on it | all others done or blocked, or <latest start time> | todo | 0 | |
-| V | <when items make separate branches> Review the combined branch with fresh subagents, one per area: data loss, the first minutes after deploy, races, regressions. Fix what they find | I | todo | 0 | |
-| D | <if the user asked for it> Open the combined change from the proven branch, with a deploy checklist in its body | V | todo | 0 | |
+| V | <when items make separate branches> Review the combined branch following ~/.claude/skills/review/SKILL.md (multi-axis Standards and Spec, interrogate, blast-radius, no-comments, hygiene), plus checks for data loss, first minutes after deploy, races, regressions, and any repo verify-* skill. Fix what they find | I | todo | 0 | |
+| D | <if the user asked for it> Open the combined pull request from the proven branch following ~/.claude/skills/pr/SKILL.md, with a deploy checklist in its body | V | todo | 0 | |
 
 ## Changes
 

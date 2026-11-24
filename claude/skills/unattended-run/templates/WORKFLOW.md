@@ -15,7 +15,13 @@ name the file.
 <Background sessions can't always load plugin skills with the Skill tool. If it fails, read the file and
 follow it by hand. Where a skill asks the user a question or publishes to a tracker, the orchestrator
 answers with a logged decision and the output goes to files.>
-- <skill name>: <absolute path to its SKILL.md>
+- tdd: ~/.claude/skills/tdd/SKILL.md
+- diagnosing-bugs: ~/.claude/skills/diagnosing-bugs/SKILL.md
+- codebase-design: ~/.claude/skills/codebase-design/SKILL.md
+- review: ~/.claude/skills/review/SKILL.md
+- pr: ~/.claude/skills/pr/SKILL.md
+- show-me-your-work: ~/.claude/skills/show-me-your-work/SKILL.md
+- verify-<name>: <project verify-* SKILL.md path, if present; remove if none>
 
 ## Steps per item (the orchestrator runs these)
 
