@@ -82,7 +82,7 @@ messages, spending money.
 3. Every background job or process this run starts has a name starting with `<PREFIX>`. Start local
    processes with `setsid` (`RUN/tools/setsid` on macOS) and append `<pid> <item id>` to
    `RUN/tools/work.pids`. Log scheduler or CI job ids in LOG.md.
-4. Delegate narrow or noisy work to subagents with model sonnet, effort low or medium, the role brief in
+4. Delegate narrow or noisy work to subagents (Claude `sonnet` with effort low or medium, or Antigravity `invoke_subagent` with `Model: "flash"` or shared subagents), with the role brief in
    `RUN/results/WORKFLOW.md`, a tight scope, the run directory path, a report file in `RUN/results/` and
    a reply of 150 words or fewer. Subagents don't commit, push or write to outside systems.
 5. Log every decision (with reason), result (with numbers) and failure in LOG.md with
@@ -101,11 +101,10 @@ messages, spending money.
 
 ## Orchestrators and handoff
 
-- Orchestrators are background sessions named "<TAG> | O1", "<TAG> | O2", and so on, where `<TAG>` is
-  this run's tag of two or three words. "orchestrator root" set up the run. A final summary session, named
-  "<TAG> | FS", reviews everything at the end. The tag is fixed for the whole run in `tools/run.env`;
-  never change it or pick a new one. Only the scripts launch these sessions. Never start one
-  with `claude --bg` yourself, because a hand-picked name breaks the grouping.
+- Orchestrators are background sessions named "<TAG> | O1", "<TAG> | O2", and so on (or tabs `O1`, `O2` in Rex session `<TAG>` under `HARNESS=agy`), where `<TAG>` is
+  this run's tag of two or three words. "orchestrator root" set up the run. A final summary session (`FS`) reviews everything at the end. The tag is fixed for the whole run in `tools/run.env`;
+  never change it or pick a new one. Only the scripts launch these sessions (use `BypassSandbox: true` under `HARNESS=agy`). Never start one
+  with `claude --bg` or `rex` yourself, because a hand-picked name breaks the grouping.
 - When you start: your launch prompt gives your number N and your predecessor's session id. If it
   doesn't, take them from the last `launch orchestrator` line in LOG.md. Read MISSION.md, COORDINATOR.md,
   PLAN.md and results/WORKFLOW.md with the Read tool, one file per call, and the last 60 lines of LOG.md.

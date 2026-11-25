@@ -10,8 +10,8 @@ Paths are relative to the nexus root, the folder that holds this file.
 |---|---|
 | Shared global instructions | `rules/global.md` |
 | Shared skills | `skills/<name>/SKILL.md` |
-| Claude Code config | `claude/CLAUDE.md`, `claude/settings.json`, `claude/hooks/`, `claude/agents/`, `claude/mods/`, `claude/skills/unattended-run/` |
-| Antigravity CLI plugin | `antigravity/plugin.json`, `antigravity/rules/AGENTS.md`, `antigravity/agents/`, `antigravity/hooks.json`, `antigravity/hooks/` |
+| Claude Code config | `claude/CLAUDE.md`, `claude/settings.json`, `claude/hooks/`, `claude/agents/`, `claude/mods/` |
+| Antigravity CLI plugin | `antigravity/plugin.json`, `antigravity/rules/AGENTS.md`, `antigravity/agents/`, `antigravity/skills/`, `antigravity/hooks.json`, `antigravity/hooks/` |
 | CLI tools | `bin/` |
 | Projects | `repos/<name>/` (optional local index in `repos/INDEX.md`) |
 | Machine setup | `SETUP.md` |

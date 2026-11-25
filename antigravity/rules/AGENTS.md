@@ -14,7 +14,7 @@ Whenever asked to carry out a task, break it down into smaller scoped tasks and 
 
 # Context handoff
 
-At 150k tokens in a main session with unfinished work (not a subagent), read `~/.gemini/config/skills/handoff/SKILL.md`, write the handoff file, and stop so the user can start a fresh session (`/new` with the `SessionStart` hook, or `agy -i`). Antigravity CLI has no background attachable session mode, so do not spawn a nested `agy` subprocess.
+At 150k tokens in a main session with unfinished work (not a subagent), read `~/.gemini/config/skills/handoff/SKILL.md`, write the handoff file, and stop so the user can start a fresh session (`/new` with the `SessionStart` hook, or `agy -i`). Do not spawn a nested `agy` subprocess inside your own terminal; for attachable background `agy` sessions (such as `/unattended-run`), follow the `bg-session` skill (`rex` + `agy -i`).
 
 @[Global instructions](~/.gemini/config/nexus-global.md)
 

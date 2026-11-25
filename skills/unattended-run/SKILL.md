@@ -16,15 +16,12 @@ chat.
 | Role | What it is | Default context budget | Job |
 |---|---|---|---|
 | orchestrator root | this session, the one the user talks to | hand off below ~120K | set up, launch orchestrator 1, write ROOT_HANDOFF.md |
-| orchestrator N | `claude --bg -n "<TAG> \| O<N>"` session, model opus | hand off at ~150K | plan, decide, delegate, review, log, check the stop condition |
-| subagents | Agent tool, model sonnet, effort low or medium | small | one narrow task, a report file and a reply of 150 words or fewer |
-| final summary | `claude --bg -n "<TAG> \| FS"` session, model opus | | review every orchestrator, write FINAL_SUMMARY.md, do the end-of-run checks |
+| orchestrator N | `claude --bg -n "<TAG> \| O<N>"` (`HARNESS=claude`) or Rex tab `O<N>` running `agy -i` (`HARNESS=agy`) | hand off at ~150K | plan, decide, delegate, review, log, check the stop condition |
+| subagents | Claude Agent tool (`sonnet`) or Antigravity `invoke_subagent` (`Model: "flash"` / shared subagents) | small | one narrow task, a report file and a reply of 150 words or fewer |
+| final summary | `claude --bg -n "<TAG> \| FS"` (`HARNESS=claude`) or Rex tab `FS` running `agy -i` (`HARNESS=agy`) | | review every orchestrator, write FINAL_SUMMARY.md, do the end-of-run checks |
 | watchdog | `tools/watchdog.sh`, a detached shell loop | | launch a new orchestrator if LOG.md goes silent |
 
-Orchestrators are separate background sessions, not subagents, so the user can list and open them with
-`claude agents` and `claude attach <id>`. Measure context with `tools/ctx` (this skill's `scripts/ctx`),
-`/context` or the token counts in the transcript. Estimate only if no such tool works. The user may set
-other budgets.
+Orchestrators are separate background sessions, not subagents. Under `HARNESS=claude`, the user lists and opens them with `claude agents` and `claude attach <id>`. Under `HARNESS=agy`, `bg_launch` creates one Rex session labeled `<TAG>` (following the `bg-session` skill) and adds each orchestrator and `FS` as a tab (`O1`, `O2`, ..., `FS`), so the user inspects them with `rex ls` or in the Rex app. Measure context with `tools/ctx` (this skill's `scripts/ctx`), `/context` or the token counts in the transcript. Estimate only if no such tool works. The user may set other budgets.
 
 When the user comes back, they open the final summary session and keep working there: they ask
 questions, review and merge, deploy, clean up, and often start the next run from that same session. In
@@ -87,7 +84,8 @@ unattended-run-<YYYY-MM-DD-HHMM>-<TAG>/
 ## Scripts
 
 Root copies this skill's `scripts/` into `tools/`. Every script reads `tools/run.env` and logs to LOG.md.
-They need bash, `claude` on the PATH, GNU or BSD `date` and `stat`, and perl on macOS for `setsid`.
+They need bash, GNU or BSD `date` and `stat`, perl on macOS for `setsid`, and either `claude` on PATH (`HARNESS=claude`) or `rex`, `agy`, and `jq` on PATH (`HARNESS=agy`).
+Under `HARNESS=agy`, commands that invoke `rex` (`check_tag.sh`, `launch_orchestrator.sh`, `launch_summary.sh`, `sessions.sh`) must run outside the terminal sandbox (`BypassSandbox: true`); the detached `watchdog.sh` reaches Rex directly.
 
 | Script | What it does |
 |---|---|
@@ -121,7 +119,8 @@ The templates use `<...>` placeholders. These need a choice:
 | TAG | run.env, MISSION.md, SUMMARIZER.md | 2 or 3 words naming the task, checked with `check_tag.sh`; see "Session names" |
 | RUN_DIR, WORKSPACE | run.env, templates | absolute paths, from setup steps 3 and 5 |
 | PREFIX | run.env, MISSION.md, SUMMARIZER.md | short lowercase tag for every job and process the run starts, e.g. `ur1101_` |
-| PERMISSION_MODE | run.env | the mode the user agrees to. A session that hits a permission prompt stalls, because nobody answers |
+| HARNESS | run.env | `claude` (`claude --bg`) or `agy` (`rex` + `agy -i`) |
+| PERMISSION_MODE | run.env | the mode the user agrees to (`auto` for Claude `--permission-mode` or `agy --mode`, or `dangerously-skip-permissions` for `agy`). A session that hits a permission prompt stalls, because nobody answers |
 | MAX_ORCH | run.env | backstop on the number of orchestrators. See setup step 4 for sizing; default 10 |
 | STOP_AT, SUMMARY_AT | run.env, MISSION.md | see "Time limits"; empty without a time component |
 | WATCHDOG_MIN | run.env | default 45. Longer than the 20-minute logging interval plus the slowest single step |
@@ -176,11 +175,11 @@ in one run and wrote them 15 minutes ahead of the clock.
    a git config lock and left a branch without its worktree. Put that in a `tools/new_wt.sh <id> <slug>`
    script that also installs dependencies. Without version control, copy what the run will change into
    `work/` in the run directory and work there. Record the path.
-   - `claude --bg` refuses a workspace that isn't trusted ("Workspace not trusted"). A folder is trusted
+   - Under `HARNESS=claude`, `claude --bg` refuses a workspace that isn't trusted ("Workspace not trusted"). A folder is trusted
      when it or a parent has `"hasTrustDialogAccepted": true` in `~/.claude.json`; a project the user
      already opens in Claude usually is. If the workspace isn't trusted, put the run directory under a
      trusted project, or ask the user to run `claude` once in the workspace from their own terminal and
-     accept the prompt.
+     accept the prompt. (`HARNESS=agy` has no workspace trust prompt.)
    - If root itself runs inside an isolated worktree, the permission check refused git commands aimed
      at another checkout ("points git at a directory computed at runtime"). Leave the worktree first.
 4. Measure what limits throughput before planning, and size the plan and MAX_ORCH to it. For work done
@@ -222,11 +221,11 @@ in one run and wrote them 15 minutes ahead of the clock.
    PID line for each. If `run_at.sh` refused a time, correct run.env and run `start_timers.sh` again. On a
    laptop, tell the user to keep it on power with the lid open. In one run the machine slept for an hour
    mid-run.
-9. Run `tools/launch_orchestrator.sh 1`. If it fails (no `claude` command, no `--bg` support, permission
+9. Run `tools/launch_orchestrator.sh 1` (with `BypassSandbox: true` under `HARNESS=agy`). If it fails (no `claude`/`rex`/`agy` command, no `--bg` support, permission
    mode rejected), stop and tell the user. Don't do the work in this session instead. Within a few
    minutes, check that orchestrator 1 has written its first LOG.md line. Tell the user the session id,
-   the session name `<TAG> | O1` and the run directory path, and that the final summary session
-   `<TAG> | FS` is the one to open when they come back.
+   the session name (`<TAG> | O1` for Claude, or Rex session `<TAG>` tab `O1` for `agy`), the run directory path, and that the final summary session
+   (`FS`) is the one to open when they come back.
 10. Write ROOT_HANDOFF.md: what you set up, the PIDs, anything you left on purpose (your own worktree,
     branches), and the steps in "At the end". Then end your turn without polling.
 
