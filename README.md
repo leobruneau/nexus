@@ -17,12 +17,12 @@ rules/global.md                  shared global rules (writing, engineering disci
 skills/<name>/SKILL.md           shared workflow and composable skills
 claude/                          Claude Code setup linked into ~/.claude
   CLAUDE.md, settings.json
-  skills/unattended-run/
   agents/<name>.md
   hooks/, mods/
 antigravity/                     Antigravity CLI plugin linked into ~/.gemini/config/plugins/nexus
   plugin.json, hooks.json
   rules/AGENTS.md
+  skills/bg-session/
   agents/<name>.md
   hooks/
 bin/                             CLI tools, currently ctx
@@ -165,10 +165,10 @@ You can keep an optional gitignored `repos/INDEX.md` (for example, listing
 
 The `unattended-run` skill sets `disable-model-invocation: true`, so only you
 start it with `/unattended-run`. It needs bash, GNU or BSD `date` and `stat`,
-perl on macOS (the skill ships a `setsid` stand-in), a Claude Code build with
-`claude --bg` and `claude agents --json`, and a trusted workspace. On a laptop,
-keep it on power with the lid open (`caffeinate` stops idle sleep, closing the
-lid still sleeps).
+perl on macOS (the skill ships a `setsid` stand-in), and either `claude --bg`
+with a trusted workspace (`HARNESS=claude`) or `rex`, `agy`, and `jq`
+(`HARNESS=agy`, using the `bg-session` skill). On a laptop, keep it on power
+with the lid open (`caffeinate` stops idle sleep, closing the lid still sleeps).
 
 Setup can ingest `/kickoff` specs from `docs/specs/` or `.scratch/` into
 `inputs/` and import `/to-tickets` queues with blocking edges into `PLAN.md`.
@@ -214,10 +214,10 @@ accumulate.
 | `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Imports `nexus-global.md` and `unslop`, plus Claude delegation rules |
 | `claude/settings.json` | merged into `~/.claude/settings.json` | Model, effort, permission mode, denied tools, hooks, plugins |
 | `claude/hooks/context-alert.sh` | `~/.claude/hooks/context-alert.sh` | Alerts once per session when context passes 100k, 125k, and 150k tokens |
-| `claude/skills/unattended-run` | `~/.claude/skills/unattended-run` | `/unattended-run` runs long tasks across chained background Claude sessions |
+| `skills/unattended-run` | `~/.claude/skills/unattended-run`, `~/.gemini/config/skills/unattended-run`, `~/.gemini/antigravity-cli/skills/unattended-run` | `/unattended-run` runs long tasks across chained background Claude or `agy` sessions |
 | `claude/agents` | `~/.claude/agents/nexus` | Claude sub-agents (`implementer`, `reviewer`, `test-runner`, `comment-sicko`) |
 | `claude/mods/context-bar` | `~/.claude/mods/context-bar` | Local Claude Code plugin showing context usage in the footer |
-| `antigravity/` | `~/.gemini/config/plugins/nexus` | Antigravity plugin: rules, sub-agents (`implementer`, `reviewer`, `test-runner`, `comment-sicko`), `PreInvocation` context alert hook |
+| `antigravity/` | `~/.gemini/config/plugins/nexus` | Antigravity plugin: rules, `bg-session` skill, sub-agents (`implementer`, `reviewer`, `test-runner`, `comment-sicko`), `PreInvocation` context alert hook |
 | `bin/ctx` | `~/.local/bin/ctx` | Prints context-window usage for Claude Code or Antigravity CLI |
 
 Not tracked: `~/.claude.json`, `~/.gemini/config/config.json`, session history,

@@ -35,7 +35,7 @@ Pick the workflow matching the stage of work. Smaller composable skills in `skil
 
 - `/kickoff`: turns an idea into a settled domain model, spec, and ticket graph.
 - `/execute-plan`: implements a spec or ticket graph interactively across `implementer` and `test-runner` sub-agents.
-- `/unattended-run`: runs a long Claude Code backlog or sweep unattended across chained background sessions, optionally ingesting `/kickoff` specs and tickets.
+- `/unattended-run`: runs a long backlog or sweep unattended across chained background sessions (`claude --bg` or `rex` + `agy -i`), optionally ingesting `/kickoff` specs and tickets.
 - `/review`: runs parallel isolated reviews for standards, spec, proven bugs, blast radius, and hygiene before opening a PR.
 - `/improve-setup`: audits recent transcripts and decision logs to refine repo checks, rules, and Nexus skills.
 

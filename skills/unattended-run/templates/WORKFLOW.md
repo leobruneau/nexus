@@ -13,7 +13,7 @@ name the file.
 ## Skill files
 
 <Background sessions can't always load plugin skills with the Skill tool. If it fails, read the file and
-follow it by hand. Where a skill asks the user a question or publishes to a tracker, the orchestrator
+follow it by hand (`~/.claude/skills/<name>/SKILL.md` under Claude, `~/.gemini/config/skills/<name>/SKILL.md` under `agy`). Where a skill asks the user a question or publishes to a tracker, the orchestrator
 answers with a logged decision and the output goes to files.>
 - tdd: ~/.claude/skills/tdd/SKILL.md
 - diagnosing-bugs: ~/.claude/skills/diagnosing-bugs/SKILL.md

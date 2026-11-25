@@ -13,11 +13,11 @@ never hold a branch the user wants to check out.
 ## Steps
 1. Make sure the run has stopped. If LOG.md has no `run stopped` line, run `<RUN_DIR>/tools/stop_work.sh`.
    Check that no job or process named `<PREFIX>...` is still running, and that nothing still listens on
-   the run's ports. Run `<RUN_DIR>/tools/sessions.sh` and keep its `! claude stop` lines for step 4. Don't
-   run `claude stop` yourself: the permission check refused it in every run so far.
+   the run's ports. Run `<RUN_DIR>/tools/sessions.sh` (with `BypassSandbox: true` under `HARNESS=agy`) and keep its stop/close lines (`! claude stop` or `rex window close` / `rex kill`) for step 4. Don't
+   run `claude stop` or `rex kill` yourself.
 2. Review the sessions. LOG.md has a `launch orchestrator N <id>` line for each. For each orchestrator:
    time span, what it did, what it concluded, problems, whether it handed off cleanly or needed recovery.
-   Where LOG.md is thin, read the session's transcript (`~/.claude/projects/*/<session id>*.jsonl`).
+   Where LOG.md is thin, read the session's transcript (`~/.claude/projects/*/<session id>*.jsonl` for Claude, or `~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript.jsonl` for `agy`).
    `claude logs` returns screen text that was no use in earlier runs.
 3. Read the results: SUMMARY.md, PLAN.md, `decisions.tsv` (if present) and the outputs they cite. If
    SUMMARY.md is missing, say so and work from PLAN.md, LOG.md and `results/`. Audit `decisions.tsv`

@@ -52,7 +52,7 @@ fi
 if (( caller < 1 )) && [[ $MODE != recovery ]]; then
   prompt="You are orchestrator $N of $RUN_NAME."
 else
-  prev=$(grep -oE "^- [0-9-]+ [0-9:]+ launch orchestrator $pred [0-9a-f]{8}" "$LOG" 2>/dev/null | tail -1 | awk '{print $7}')
+  prev=$(grep -oE "^- [0-9-]+ [0-9:]+ launch orchestrator $pred [^[:space:]]+" "$LOG" 2>/dev/null | tail -1 | awk '{print $7}')
   prompt="You are orchestrator $N of $RUN_NAME. Your predecessor is orchestrator $pred, session ${prev:-none}."
 fi
 prompt+=" Read $RUN_DIR/MISSION.md first and follow it, then COORDINATOR.md, PLAN.md, results/WORKFLOW.md, and only the last 60 lines of LOG.md in the same directory."
@@ -61,7 +61,7 @@ if [[ $MODE == recovery ]]; then
 fi
 id=$(bg_launch "$TAG | O$N" "$prompt") || exit 1
 if [[ -z $id ]]; then
-  log "launch orchestrator $N: no session id in the output of claude --bg"
+  log "launch orchestrator $N: no session id from bg_launch (HARNESS=${HARNESS:-claude})"
   exit 1
 fi
 log "launch orchestrator $N $id${MODE:+ ($MODE)}"
