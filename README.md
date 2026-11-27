@@ -137,7 +137,7 @@ You can keep an optional gitignored `repos/INDEX.md` (for example, listing
   `interrogate`, `blast-radius`, `no-comments`, `pr`, `show-me-your-work`,
   `create-verification-skill`, `maintain-verification-skill`,
   `improve-codebase-architecture`, `correct`, `reflect`, `writing-for-agents`,
-  `handoff`, `time-machine`, and `unslop`.
+  `handoff`, `time-machine`, `skill-doctor`, and `unslop`.
 - `/handoff`. Writes a compact handoff file under
   `~/.local/share/nexus/handoffs/<project-slug>/` and prints commands to start a
   fresh session with it. To auto-inject the newest pending handoff on `/clear`,
@@ -153,6 +153,9 @@ You can keep an optional gitignored `repos/INDEX.md` (for example, listing
 - `/time-machine`. Mines Claude Code transcripts, Antigravity CLI transcripts,
   and git history over a time window, then writes a chronological report to
   `~/time-machine-reports/`.
+- `/skill-doctor`. Grades installed skills from local Claude Code and
+  Antigravity CLI session history, drafts skill edits, and renders a local
+  HTML report.
 - Shared sub-agents. Both harnesses define `implementer` for executing one
   already-planned change, `reviewer` for read-only diff review, `test-runner`
   for running a test, build, or lint command and returning only failures, and
@@ -210,6 +213,7 @@ accumulate.
 | `skills/writing-for-agents` | `~/.claude/skills/writing-for-agents`, `~/.gemini/config/skills/writing-for-agents`, `~/.gemini/antigravity-cli/skills/writing-for-agents` | Guides edits to skills, `AGENTS.md`, and `CLAUDE.md` |
 | `skills/handoff` | `~/.claude/skills/handoff`, `~/.gemini/config/skills/handoff`, `~/.gemini/antigravity-cli/skills/handoff` | `/handoff` writes a handoff file and hooks or spawns a fresh background Claude session |
 | `skills/time-machine` | `~/.claude/skills/time-machine`, `~/.gemini/config/skills/time-machine`, `~/.gemini/antigravity-cli/skills/time-machine` | `/time-machine` reports past work from Claude Code, Antigravity CLI, and git history |
+| `skills/skill-doctor` | `~/.claude/skills/skill-doctor`, `~/.gemini/config/skills/skill-doctor`, `~/.gemini/antigravity-cli/skills/skill-doctor` | `/skill-doctor` grades installed skills from local session history and renders an HTML report |
 | `skills/unslop` | `~/.claude/skills/unslop`, `~/.gemini/config/skills/unslop`, `~/.gemini/antigravity-cli/skills/unslop` | Writing rules that strip AI patterns from prose |
 | `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` | Imports `nexus-global.md` and `unslop`, plus Claude delegation rules |
 | `claude/settings.json` | merged into `~/.claude/settings.json` | Model, effort, permission mode, denied tools, hooks, plugins |
